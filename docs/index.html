@@ -165,7 +165,7 @@
     </div>
     <div class="chips" id="chips" aria-label="Filtrar por tipo"></div>
   </div>
-  <div class="meta"><span id="count"></span><span>Dados: PokéAPI</span></div>
+  <div class="meta"><span id="count"></span><span id="offlineStatus">Dados: PokéAPI</span></div>
   <div class="grid" id="grid"></div>
   <button class="more" id="more" type="button" hidden>Carregar mais</button>
 </div>
@@ -354,7 +354,22 @@
 })();
 </script>
 <script>
-if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) { navigator.serviceWorker.register('sw.js').catch(function () {}); }
+(function () {
+  if (!('serviceWorker' in navigator) || location.protocol.indexOf('http') !== 0) return;
+  var st = document.getElementById('offlineStatus');
+  function say(t) { if (st) st.textContent = t; }
+  navigator.serviceWorker.addEventListener('message', function (e) {
+    var d = e.data; if (!d || d.type !== 'precache') return;
+    if (d.ok) say('Pronto para usar offline');
+    else if (d.done >= d.total) say('Offline parcial: abra de novo com internet');
+    else say('Baixando para offline… ' + d.done + '/' + d.total);
+  });
+  navigator.serviceWorker.register('sw.js').then(function () { return navigator.serviceWorker.ready; }).then(function (reg) {
+    say('Baixando para offline…');
+    (reg.active || navigator.serviceWorker.controller).postMessage('precache');
+    try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
+  }).catch(function () {});
+})();
 </script>
 </body>
 </html>
