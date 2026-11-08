@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Pokédex">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#e3350d">
+<link rel="manifest" href="manifest.webmanifest">
+<style>
+  html { -webkit-text-size-adjust: 100%; } body { margin: 0; } img { max-width: 100%; } [hidden] { display: none !important; }
+  header.top { padding-top: calc(18px + env(safe-area-inset-top, 0px)) !important; }
+  .wrap { padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px)) !important; }
+  body { -webkit-tap-highlight-color: transparent; overscroll-behavior-y: none; }
+</style><title>Pokédex</title>
+
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='46' fill='%23fff'/%3E%3Cpath d='M4 50A46 46 0 0 1 96 50Z' fill='%23e3350d'/%3E%3Crect x='4' y='44' width='92' height='12' fill='%231d1c1a'/%3E%3Ccircle cx='50' cy='50' r='46' fill='none' stroke='%231d1c1a' stroke-width='6'/%3E%3Ccircle cx='50' cy='50' r='15' fill='%23fff' stroke='%231d1c1a' stroke-width='6'/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+  /* Layout: faixa vermelha com busca sobreposta, grade de cards, ficha em tela cheia no celular */
+  :root {
+    --bg: #f3f1ee; --surface: #ffffff; --surface-2: #ece9e4; --text: #1d1c1a; --muted: #67635c;
+    --border: #dedad3; --accent: #e3350d; --accent-ink: #ffffff; --shadow: 0 6px 24px rgba(30,20,10,.10);
+    --radius: 16px; --gutter-l: max(16px, env(safe-area-inset-left, 0px)); --gutter-r: max(16px, env(safe-area-inset-right, 0px));
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #141417; --surface: #1e1e23; --surface-2: #29292f; --text: #f1f0ed; --muted: #a8a59f;
+      --border: #34343b; --accent: #ff5a38; --shadow: 0 6px 24px rgba(0,0,0,.45); color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #141417; --surface: #1e1e23; --surface-2: #29292f; --text: #f1f0ed; --muted: #a8a59f;
+    --border: #34343b; --accent: #ff5a38; --shadow: 0 6px 24px rgba(0,0,0,.45); color-scheme: dark;
+  }
+  .t-normal{--tc:#8f8f80}.t-fire{--tc:#e8672a}.t-water{--tc:#3f82e6}.t-electric{--tc:#d9a900}
+  .t-grass{--tc:#4aa83d}.t-ice{--tc:#3fb8ba}.t-fighting{--tc:#c23a2e}.t-poison{--tc:#a652b8}
+  .t-ground{--tc:#c49a3e}.t-flying{--tc:#7a8ce6}.t-psychic{--tc:#ea4378}.t-bug{--tc:#93a317}
+  .t-rock{--tc:#a58a28}.t-ghost{--tc:#6b5b9a}.t-dragon{--tc:#6a3af2}.t-dark{--tc:#6b5547}
+  .t-steel{--tc:#8e8eab}.t-fairy{--tc:#e07fb6}
+
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 16px; line-height: 1.5; }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  button:focus-visible, input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding-left: var(--gutter-l); padding-right: var(--gutter-r); padding-bottom: 60px; }
+
+  header.top { background: var(--accent); color: var(--accent-ink); padding: 18px 0 64px; position: relative; overflow: hidden; }
+  header.top::after {
+    content: ""; position: absolute; right: -70px; top: -70px; width: 250px; height: 250px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,255,255,.9) 0 20%, rgba(0,0,0,.2) 21% 26%, rgba(255,255,255,.14) 27% 100%);
+    opacity: .4; pointer-events: none;
+  }
+  .bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; position: relative; z-index: 1; padding-left: var(--gutter-l); padding-right: var(--gutter-r); max-width: 1100px; margin: 0 auto; }
+  .logo { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.6rem; letter-spacing: -.02em; }
+  .logo svg { width: 38px; height: 38px; flex: none; filter: drop-shadow(0 2px 3px rgba(0,0,0,.3)); }
+  .icon-btn { background: rgba(255,255,255,.22); border: 0; width: 42px; height: 42px; border-radius: 50%; color: #fff; display: grid; place-items: center; }
+  .icon-btn svg { width: 20px; height: 20px; }
+
+  .search-card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); margin-top: -46px; padding: 12px; position: relative; z-index: 2; border: 1px solid var(--border); }
+  .search-row { display: flex; gap: 10px; }
+  .search-row input { flex: 1; min-width: 0; font: inherit; font-size: 1rem; padding: 12px 14px; border-radius: 12px; border: 2px solid var(--border); background: var(--surface-2); color: var(--text); }
+  .rand { background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 12px; padding: 0 16px; font-weight: 700; white-space: nowrap; }
+  .chips { display: flex; gap: 8px; overflow-x: auto; padding: 12px 2px 4px; scrollbar-width: thin; }
+  .chip { flex: none; border: 2px solid var(--border); background: var(--surface); padding: 5px 13px; border-radius: 999px; font-size: .85rem; font-weight: 600; }
+  .chip.on { background: var(--tc, var(--accent)); border-color: var(--tc, var(--accent)); color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.35); }
+
+  .meta { display: flex; justify-content: space-between; gap: 8px; margin: 20px 2px 12px; color: var(--muted); font-size: .9rem; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+  .card { min-width: 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 10px 12px; text-align: center; position: relative; transition: transform .15s, box-shadow .15s; }
+  .card:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
+  .card .num { position: absolute; top: 9px; left: 11px; font-size: .75rem; color: var(--muted); font-weight: 700; }
+  .card .art { width: 100%; aspect-ratio: 1; display: grid; place-items: center; background: radial-gradient(circle at 50% 55%, var(--surface-2) 0 60%, transparent 61%); }
+  .card img { width: 86%; height: 86%; object-fit: contain; filter: drop-shadow(0 5px 5px rgba(0,0,0,.18)); }
+  .card h3 { margin: 4px 0 0; font-size: .98rem; text-transform: capitalize; overflow-wrap: anywhere; }
+  .skeleton { background: linear-gradient(90deg, var(--surface-2), var(--surface), var(--surface-2)); background-size: 200% 100%; animation: sh 1.2s infinite; border-radius: var(--radius); min-height: 190px; }
+  @keyframes sh { to { background-position: -200% 0; } }
+  .more { display: block; margin: 24px auto 0; padding: 12px 28px; border-radius: 999px; border: 2px solid var(--accent); background: transparent; color: var(--accent); font-weight: 700; }
+  .empty, .err { text-align: center; color: var(--muted); padding: 50px 10px; grid-column: 1 / -1; }
+  .err button { margin-top: 10px; padding: 8px 18px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); }
+
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: none; z-index: 50; overflow-y: auto; padding: 24px 12px; }
+  .overlay.open { display: block; }
+  .sheet { max-width: 860px; margin: 0 auto; background: var(--surface); border-radius: 22px; overflow: hidden; position: relative; box-shadow: 0 20px 60px rgba(0,0,0,.4); }
+  .hero { background: linear-gradient(160deg, var(--tc, #888), color-mix(in srgb, var(--tc2, var(--tc, #888)) 70%, #000)); color: #fff; padding: 22px 22px 0; position: relative; text-shadow: 0 1px 3px rgba(0,0,0,.3); }
+  .sheet-top { position: absolute; top: 14px; left: 14px; right: 14px; display: flex; justify-content: space-between; z-index: 3; }
+  .sheet-top .nav { display: flex; gap: 6px; }
+  .sheet-top button { width: 40px; height: 40px; border: 0; border-radius: 50%; background: rgba(0,0,0,.28); color: #fff; font-size: 1.2rem; line-height: 1; }
+  .sheet-top button:disabled { opacity: .35; }
+  .hero .titles { text-align: center; padding-top: 38px; }
+  .hero .id { font-weight: 700; opacity: .9; }
+  .hero h2 { margin: 0; font-size: 2.2rem; text-transform: capitalize; line-height: 1.15; overflow-wrap: anywhere; }
+  .hero .genus { opacity: .92; font-size: .95rem; }
+  .types { display: flex; gap: 8px; justify-content: center; margin: 10px 0; flex-wrap: wrap; }
+  .type { background: var(--tc); color: #fff; padding: 3px 14px; border-radius: 999px; font-weight: 700; font-size: .85rem; border: 2px solid rgba(255,255,255,.55); text-shadow: 0 1px 2px rgba(0,0,0,.35); }
+  .stage { display: grid; place-items: center; }
+  .stage img { width: min(300px, 72vw); height: min(300px, 72vw); object-fit: contain; filter: drop-shadow(0 14px 14px rgba(0,0,0,.35)); margin-bottom: -26px; position: relative; z-index: 1; }
+  .body { padding: 44px 22px 28px; display: grid; gap: 26px; }
+  .body h4 { margin: 0 0 10px; font-size: .8rem; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); }
+  .desc { font-size: 1.02rem; margin: 0; }
+  .facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .fact { background: var(--surface-2); border-radius: 12px; padding: 10px 12px; min-width: 0; }
+  .fact b { display: block; font-size: 1.1rem; }
+  .fact span { color: var(--muted); font-size: .8rem; }
+  .abil { display: flex; gap: 8px; flex-wrap: wrap; }
+  .abil span { background: var(--surface-2); padding: 5px 12px; border-radius: 999px; font-size: .88rem; text-transform: capitalize; }
+  .abil span.hid { border: 1px dashed var(--muted); }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; }
+  .two > div { min-width: 0; }
+  .stat { display: grid; grid-template-columns: 86px 36px 1fr; align-items: center; gap: 8px; font-size: .9rem; margin: 6px 0; }
+  .stat .k { color: var(--muted); }
+  .stat .v { font-weight: 700; text-align: right; }
+  .track { height: 9px; background: var(--surface-2); border-radius: 99px; overflow: hidden; }
+  .fill { height: 100%; border-radius: 99px; background: var(--tc, var(--accent)); width: 0; transition: width .7s cubic-bezier(.2,.8,.2,1); }
+  .total { text-align: right; color: var(--muted); font-size: .85rem; margin-top: 4px; }
+  .evo-tree { display: flex; align-items: center; gap: 6px; overflow-x: auto; padding: 4px 2px 8px; }
+  .evo-node { display: flex; align-items: center; gap: 6px; }
+  .branches { display: flex; flex-direction: column; gap: 10px; }
+  .branch { display: flex; align-items: center; gap: 6px; }
+  .arrow { display: flex; flex-direction: column; align-items: center; color: var(--muted); font-size: .72rem; text-align: center; min-width: 64px; max-width: 90px; line-height: 1.2; }
+  .arrow b { font-size: 1.3rem; color: var(--accent); }
+  .evo { background: var(--surface-2); border: 2px solid transparent; border-radius: 16px; padding: 8px 10px; text-align: center; width: 118px; }
+  .evo.cur { border-color: var(--accent); background: var(--surface); }
+  .evo img { width: 92px; height: 92px; object-fit: contain; }
+  .evo div { font-size: .85rem; font-weight: 700; text-transform: capitalize; overflow-wrap: anywhere; }
+  .evo small { color: var(--muted); }
+  .noevo { color: var(--muted); font-size: .92rem; margin: 0; }
+
+  @media (max-width: 640px) {
+    .two { grid-template-columns: 1fr; }
+    .overlay { padding: 0; }
+    .sheet { border-radius: 0; min-height: 100%; }
+    .sheet-top { top: max(14px, env(safe-area-inset-top, 0px)); left: var(--gutter-l); right: var(--gutter-r); }
+    .hero { padding-left: var(--gutter-l); padding-right: var(--gutter-r); }
+    .body { padding-left: var(--gutter-l); padding-right: var(--gutter-r); padding-bottom: max(28px, env(safe-area-inset-bottom, 0px)); }
+    .hero h2 { font-size: 1.8rem; }
+    .evo-tree { flex-direction: column; overflow-x: visible; }
+    .evo-node, .branch { flex-direction: column; }
+    .branches { align-items: center; }
+    .arrow b { transform: rotate(90deg); }
+  }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+
+</head><body><header class="top">
+  <div class="bar">
+    <div class="logo">
+      <svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="46" fill="#fff"/><path d="M4 50A46 46 0 0 1 96 50Z" fill="#ff4a24"/><rect x="4" y="44" width="92" height="12" fill="#1d1c1a"/><circle cx="50" cy="50" r="46" fill="none" stroke="#1d1c1a" stroke-width="6"/><circle cx="50" cy="50" r="15" fill="#fff" stroke="#1d1c1a" stroke-width="6"/></svg>
+      Pokédex
+    </div>
+    <button class="icon-btn" id="themeBtn" type="button" aria-label="Alternar tema claro e escuro">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v18" /><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/></svg>
+    </button>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="search-card">
+    <div class="search-row">
+      <input id="q" type="search" placeholder="Nome ou número (ex.: pikachu, 25)" autocomplete="off" aria-label="Buscar Pokémon">
+      <button class="rand" id="rand" type="button">Aleatório</button>
+    </div>
+    <div class="chips" id="chips" aria-label="Filtrar por tipo"></div>
+  </div>
+  <div class="meta"><span id="count"></span><span>Dados: PokéAPI</span></div>
+  <div class="grid" id="grid"></div>
+  <button class="more" id="more" type="button" hidden>Carregar mais</button>
+</div>
+
+<div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-label="Detalhes do Pokémon">
+  <div class="sheet" id="sheet"></div>
+</div>
+
+<script>
+(function () {
+  var PAGE = 36;
+  var TYPE_PT = { normal:'Normal', fire:'Fogo', water:'Água', electric:'Elétrico', grass:'Planta', ice:'Gelo', fighting:'Lutador', poison:'Veneno', ground:'Terra', flying:'Voador', psychic:'Psíquico', bug:'Inseto', rock:'Pedra', ghost:'Fantasma', dragon:'Dragão', dark:'Sombrio', steel:'Aço', fairy:'Fada' };
+  var STAT_PT = ['PS', 'Ataque', 'Defesa', 'Atq. Esp.', 'Def. Esp.', 'Velocidade'];
+  var $ = function (id) { return document.getElementById(id); };
+
+  var D = null, byId = {}, byName = {}, all = [], typeSets = {};
+  var typeFilter = null, current = [], shown = 0, navList = [], openId = null, timer;
+
+  function pad(n) { return '#' + String(n).padStart(4, '0'); }
+  function pretty(s) { return String(s).replace(/-/g, ' '); }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  /* imagens vêm em pacotes de 80 (img-0.json = #1 a #20 etc.), carregados sob demanda */
+  var PER = 80, packs = {};
+  function loadPack(k) {
+    if (!packs[k]) packs[k] = fetch('img-' + k + '.json').then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).catch(function (e) { delete packs[k]; throw e; });
+    return packs[k];
+  }
+  function img(id, alt) { return '<img decoding="async" data-img="' + id + '" alt="' + esc(alt) + '">'; }
+  function hydrate(root) {
+    root.querySelectorAll('img[data-img]:not([src])').forEach(function (el) {
+      var id = +el.dataset.img;
+      loadPack(Math.floor((id - 1) / PER)).then(function (arr) {
+        var b = arr[(id - 1) % PER]; if (b) el.src = 'data:image/png;base64,' + b;
+      }).catch(function () {});
+    });
+  }
+
+  function init() {
+    $('grid').innerHTML = Array(12).fill('<div class="skeleton"></div>').join('');
+    fetch('data.json').then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).then(function (d) {
+      D = d;
+      D.p.forEach(function (a) {
+        var o = { id: a[0], name: a[1], types: a[2], h: a[3], w: a[4], xp: a[5], stats: a[6], abil: a[7], genus: a[8], flavor: a[9], chain: a[10] };
+        byId[o.id] = o; byName[o.name] = o.id; all.push({ id: o.id, name: o.name });
+        o.types.forEach(function (t) { (typeSets[t] = typeSets[t] || new Set()).add(o.id); });
+      });
+      $('chips').innerHTML = '<button class="chip on" type="button" data-type="">Todos</button>' + Object.keys(TYPE_PT).map(function (t) {
+        return '<button class="chip t-' + t + '" type="button" data-type="' + t + '">' + TYPE_PT[t] + '</button>';
+      }).join('');
+      applyFilters(); route();
+    }).catch(function () {
+      $('grid').innerHTML = '<div class="err">Não foi possível carregar a Pokédex.<br><button type="button" id="retry">Tentar de novo</button></div>';
+      $('retry').onclick = init;
+    });
+  }
+
+  function applyFilters() {
+    var q = $('q').value.trim().toLowerCase().replace(/^#/, '');
+    current = all.filter(function (p) {
+      if (typeFilter && !typeFilter.has(p.id)) return false;
+      return !q || p.name.indexOf(q) !== -1 || String(p.id) === q.replace(/^0+/, '');
+    });
+    shown = 0; $('grid').innerHTML = ''; renderMore();
+  }
+  function renderMore() {
+    var slice = current.slice(shown, shown + PAGE);
+    $('grid').insertAdjacentHTML('beforeend', slice.map(function (p) {
+      return '<button class="card" type="button" data-id="' + p.id + '" aria-label="' + esc(pretty(p.name)) + '"><span class="num">' + pad(p.id) + '</span><div class="art">' + img(p.id, p.name) + '</div><h3>' + esc(pretty(p.name)) + '</h3></button>';
+    }).join(''));
+    shown += slice.length; hydrate($('grid'));
+    $('more').hidden = shown >= current.length;
+    $('count').textContent = current.length + ' Pokémon';
+    if (!current.length) $('grid').innerHTML = '<div class="empty">Nenhum Pokémon encontrado.<br>Tente outro nome ou número.</div>';
+  }
+
+  $('q').addEventListener('input', function () { clearTimeout(timer); timer = setTimeout(applyFilters, 150); });
+  $('q').addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter') return;
+    clearTimeout(timer); applyFilters();
+    if (current.length) { navList = current.map(function (p) { return p.id; }); openPokemon(current[0].id); }
+  });
+  $('more').onclick = renderMore;
+  $('grid').addEventListener('click', function (e) {
+    var c = e.target.closest('.card'); if (!c) return;
+    navList = current.map(function (p) { return p.id; }); openPokemon(+c.dataset.id);
+  });
+  $('chips').addEventListener('click', function (e) {
+    var b = e.target.closest('.chip'); if (!b) return;
+    document.querySelectorAll('.chip').forEach(function (x) { x.classList.toggle('on', x === b); });
+    typeFilter = b.dataset.type ? typeSets[b.dataset.type] : null;
+    applyFilters();
+  });
+  $('rand').onclick = function () { navList = []; openPokemon(1 + Math.floor(Math.random() * all.length)); };
+
+  /* ---------- ficha ---------- */
+  function setHash(h) { try { history.replaceState(null, '', h ? '#' + h : location.pathname + location.search); } catch (e) {} }
+  function openPokemon(id) {
+    var p = byId[id]; if (!p) return;
+    openId = id; $('overlay').classList.add('open'); $('overlay').scrollTop = 0;
+    document.body.style.overflow = 'hidden';
+    setHash(id); buildSheet(p);
+  }
+  function closeSheet() { $('overlay').classList.remove('open'); document.body.style.overflow = ''; openId = null; setHash(''); }
+  function neighbor(id, dir) {
+    var i = navList.indexOf(id);
+    if (i !== -1 && navList[i + dir]) return navList[i + dir];
+    var n = id + dir; return n < 1 ? all.length : n > all.length ? 1 : n;
+  }
+  function cssVar(cls) { var e = document.createElement('span'); e.className = cls; document.body.appendChild(e); var v = getComputedStyle(e).getPropertyValue('--tc'); e.remove(); return v; }
+
+  function buildSheet(p) {
+    var stats = p.stats.map(function (v, i) {
+      return '<div class="stat"><span class="k">' + STAT_PT[i] + '</span><span class="v">' + v + '</span><div class="track"><div class="fill" data-w="' + Math.min(100, Math.round(v / 180 * 100)) + '"></div></div></div>';
+    }).join('');
+    var total = p.stats.reduce(function (a, b) { return a + b; }, 0);
+    var abil = p.abil.map(function (a) { return '<span class="' + (a[1] ? 'hid' : '') + '">' + esc(pretty(a[0])) + (a[1] ? ' (oculta)' : '') + '</span>'; }).join('');
+    var nav = navList.length ? null : null;
+    $('sheet').innerHTML =
+      '<div class="hero" id="hero">' +
+        '<div class="sheet-top"><div class="nav"><button id="prev" type="button" aria-label="Anterior">‹</button><button id="next" type="button" aria-label="Próximo">›</button></div><button id="x" type="button" aria-label="Fechar">✕</button></div>' +
+        '<div class="titles"><div class="id">' + pad(p.id) + '</div><h2>' + esc(pretty(p.name)) + '</h2><div class="genus">' + esc(p.genus) + '</div>' +
+        '<div class="types">' + p.types.map(function (t) { return '<span class="type t-' + t + '">' + (TYPE_PT[t] || t) + '</span>'; }).join('') + '</div></div>' +
+        '<div class="stage">' + img(p.id, p.name) + '</div>' +
+      '</div>' +
+      '<div class="body">' +
+        (p.flavor ? '<p class="desc">' + esc(p.flavor) + '</p>' : '') +
+        '<div class="facts"><div class="fact"><b>' + (p.h / 10).toFixed(1).replace('.', ',') + ' m</b><span>Altura</span></div>' +
+        '<div class="fact"><b>' + (p.w / 10).toFixed(1).replace('.', ',') + ' kg</b><span>Peso</span></div>' +
+        '<div class="fact"><b>' + (p.xp || '—') + '</b><span>XP base</span></div></div>' +
+        '<div class="two"><div><h4>Status base</h4>' + stats + '<div class="total">Total: ' + total + '</div></div>' +
+        '<div><h4>Habilidades</h4><div class="abil">' + abil + '</div></div></div>' +
+        '<div><h4>Evoluções</h4><div id="evo"></div></div>' +
+      '</div>';
+    var hero = $('hero');
+    hero.style.setProperty('--tc', cssVar('type t-' + p.types[0]));
+    if (p.types[1]) hero.style.setProperty('--tc2', cssVar('type t-' + p.types[1]));
+    document.querySelector('.body').style.setProperty('--tc', cssVar('type t-' + p.types[0]));
+    requestAnimationFrame(function () { requestAnimationFrame(function () {
+      document.querySelectorAll('.fill').forEach(function (f) { f.style.width = f.dataset.w + '%'; });
+    }); });
+    $('x').onclick = closeSheet;
+    $('prev').onclick = function () { openPokemon(neighbor(p.id, -1)); };
+    $('next').onclick = function () { openPokemon(neighbor(p.id, 1)); };
+    var chain = D.c[p.chain];
+    $('evo').innerHTML = (!chain || !chain.e.length)
+      ? '<p class="noevo">Este Pokémon não evolui nem tem pré-evolução.</p>'
+      : '<div class="evo-tree">' + renderNode(chain, p.id) + '</div>';
+    hydrate($('sheet'));
+  }
+
+  function renderNode(node, cur) {
+    var s = byId[node.i]; if (!s) return '';
+    var out = '<div class="evo-node"><button class="evo' + (node.i === cur ? ' cur' : '') + '" type="button" data-open="' + node.i + '">' + img(node.i, s.name) + '<div>' + esc(pretty(s.name)) + '</div><small>' + pad(node.i) + '</small></button>';
+    if (node.e.length) {
+      out += '<div class="branches">' + node.e.map(function (b) {
+        return '<div class="branch"><div class="arrow"><b>→</b><span>' + esc(b[0]) + '</span></div>' + renderNode(b[1], cur) + '</div>';
+      }).join('') + '</div>';
+    }
+    return out + '</div>';
+  }
+
+  $('sheet').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-open]'); if (b) { navList = []; openPokemon(+b.dataset.open); }
+  });
+  $('overlay').addEventListener('click', function (e) { if (e.target === $('overlay')) closeSheet(); });
+  document.addEventListener('keydown', function (e) {
+    if (!openId) return;
+    if (e.key === 'Escape') closeSheet();
+    if (e.key === 'ArrowLeft') openPokemon(neighbor(openId, -1));
+    if (e.key === 'ArrowRight') openPokemon(neighbor(openId, 1));
+  });
+  function route() {
+    var h = decodeURIComponent(location.hash.slice(1)).toLowerCase(); if (!h) return;
+    var id = /^\d+$/.test(h) ? +h : byName[h]; if (id) openPokemon(id);
+  }
+
+  var root = document.documentElement;
+  try { var s = localStorage.getItem('pk-theme'); if (s) root.setAttribute('data-theme', s); } catch (e) {}
+  $('themeBtn').onclick = function () {
+    var cur = root.getAttribute('data-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    var n = cur === 'dark' ? 'light' : 'dark'; root.setAttribute('data-theme', n);
+    try { localStorage.setItem('pk-theme', n); } catch (e) {}
+  };
+
+  init();
+})();
+</script>
+<script>
+if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) { navigator.serviceWorker.register('sw.js').catch(function () {}); }
+</script>
+</body>
+</html>

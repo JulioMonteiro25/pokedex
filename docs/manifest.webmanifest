@@ -1,0 +1,13 @@
+{
+  "name": "Pokédex",
+  "short_name": "Pokédex",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#e3350d",
+  "theme_color": "#e3350d",
+  "lang": "pt-BR",
+  "icons": [
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
