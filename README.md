@@ -2,6 +2,11 @@
 
 Pokédex com os dados da [PokéAPI](https://pokeapi.co/): busca por nome ou número, filtro por tipo, status, habilidades, fraquezas e vantagens por tipo, árvore de evoluções com imagens e as 97 Mega Evoluções. Funciona como app no iPhone (tela cheia, ícone de pokébola e uso offline depois do primeiro acesso).
 
+## Idioma (português / inglês)
+- O botão **PT / EN** (no topo da lista e na ficha de cada Pokémon) troca o idioma do conteúdo vindo da PokéAPI: descrição, categoria ("Pokémon Rato"), habilidades e condições de evolução. A escolha fica salva no aparelho; na primeira vez o app usa português se o navegador estiver em português.
+- As traduções ficam em `docs/pt.json` e **não são oficiais** (a PokéAPI não tem português): nomes de Pokémon e de golpes continuam em inglês. Medidas em milhas, pés e °F foram convertidas para o sistema métrico.
+- As Megas usam a descrição e a categoria do Pokémon original.
+
 ## Mega Evoluções
 - O filtro **Mega** (ao lado de "Todos") mostra só as Megas e combina com o filtro de tipo.
 - A busca por nome também encontra as Megas (ex.: "charizard" mostra Charizard, Mega Charizard X e Mega Charizard Y).
@@ -27,6 +32,7 @@ docs/            o app (é a pasta publicada pelo GitHub Pages)
 ferramentas/     scripts PowerShell e a versão antiga para PC
 ```
 - `docs/index.html`, `manifest.webmanifest`, `sw.js`, ícones: o app.
+- `docs/pt.json`: traduções para português (descrições `f`, categorias `g`, habilidades `a` e condições de evolução `e`).
 - `docs/data.json`: dados dos 1025 Pokémon (tipos, status, habilidades, evoluções) e, na chave `m`, das 97 Megas.
 - `docs/img-0.json` a `img-12.json`: imagens oficiais em pacotes de 80 (base64), carregados sob demanda.
 - `docs/img-m0.json`, `img-m1.json`: imagens das Megas (50 por pacote).
@@ -37,4 +43,4 @@ ferramentas/     scripts PowerShell e a versão antiga para PC
 
 A lista vai até o #1025 (9ª geração). Os Pokémon da 10ª geração entram quando houver dados oficiais na PokéAPI.
 
-Descrições, categorias e habilidades estão em inglês (a PokéAPI não tem português). Pokémon e as imagens são marcas e arte da Nintendo / Game Freak / The Pokémon Company, usados aqui em projeto pessoal e sem fins comerciais.
+Pokémon e as imagens são marcas e arte da Nintendo / Game Freak / The Pokémon Company, usados aqui em projeto pessoal e sem fins comerciais.

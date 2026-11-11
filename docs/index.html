@@ -59,6 +59,8 @@
   .logo svg { width: 38px; height: 38px; flex: none; filter: drop-shadow(0 2px 3px rgba(0,0,0,.3)); }
   .icon-btn { background: rgba(255,255,255,.22); border: 0; width: 42px; height: 42px; border-radius: 50%; color: #fff; display: grid; place-items: center; }
   .icon-btn svg { width: 20px; height: 20px; }
+  .bar-right { display: flex; gap: 8px; align-items: center; }
+  .lang-btn { width: auto; min-width: 42px; padding: 0 12px; border-radius: 999px; font-weight: 700; font-size: .85rem; letter-spacing: .04em; cursor: pointer; }
 
   .search-card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); margin-top: -46px; padding: 12px; position: relative; z-index: 2; border: 1px solid var(--border); }
   .search-row { display: flex; gap: 10px; }
@@ -90,6 +92,8 @@
   .sheet-top .nav { display: flex; gap: 6px; }
   .sheet-top button { width: 40px; height: 40px; border: 0; border-radius: 50%; background: rgba(0,0,0,.28); color: #fff; font-size: 1.2rem; line-height: 1; }
   .sheet-top button:disabled { opacity: .35; }
+  .sheet-top .right { display: flex; gap: 6px; }
+  .sheet-top .right button.lang { width: auto; min-width: 40px; padding: 0 12px; border-radius: 999px; font-size: .8rem; font-weight: 700; letter-spacing: .04em; }
   .hero .titles { text-align: center; padding-top: 38px; }
   .hero .id { font-weight: 700; opacity: .9; }
   .hero h2 { margin: 0; font-size: 2.2rem; text-transform: capitalize; line-height: 1.15; overflow-wrap: anywhere; }
@@ -155,9 +159,12 @@
       <svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="46" fill="#fff"/><path d="M4 50A46 46 0 0 1 96 50Z" fill="#ff4a24"/><rect x="4" y="44" width="92" height="12" fill="#1d1c1a"/><circle cx="50" cy="50" r="46" fill="none" stroke="#1d1c1a" stroke-width="6"/><circle cx="50" cy="50" r="15" fill="#fff" stroke="#1d1c1a" stroke-width="6"/></svg>
       Pokédex
     </div>
+    <div class="bar-right">
+    <button class="icon-btn lang-btn" id="langBtn" type="button" aria-label="Idioma do conteúdo: português ou inglês" title="Idioma do conteúdo">PT</button>
     <button class="icon-btn" id="themeBtn" type="button" aria-label="Alternar tema claro e escuro">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v18" /><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/></svg>
     </button>
+    </div>
   </div>
 </header>
 
@@ -227,6 +234,27 @@
 
   function pad(n) { return '#' + String(n).padStart(4, '0'); }
   function pretty(s) { return String(s).replace(/-/g, ' '); }
+
+  /* ---------- idioma do conteúdo (PokéAPI está em inglês; pt.json tem tradução não oficial) ---------- */
+  var lang = 'pt', PT = null;
+  try { var sl = localStorage.getItem('pk-lang'); lang = sl === 'en' || sl === 'pt' ? sl : (/^pt/i.test(navigator.language || '') ? 'pt' : 'en'); } catch (e) {}
+  function loadPT() {
+    if (PT) return Promise.resolve(PT);
+    return fetch('pt.json').then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).then(function (j) { PT = j; return j; });
+  }
+  function usePT() { return lang === 'pt' && PT; }
+  function trAbil(n) { var k = pretty(n); return usePT() && PT.a[k] ? PT.a[k] : k; }
+  function trGenus(g) {
+    if (!g || !usePT()) return g || '';
+    var k = g.replace(/\s*Pokémon$/, ''); return PT.g[k] ? 'Pokémon ' + PT.g[k] : g;
+  }
+  function trFlavor(p) { var id = p.mega ? p.base : p.id; return usePT() && PT.f[id] ? PT.f[id] : p.flavor; }
+  function trEvo(l) {
+    if (!usePT()) return l;
+    if (PT.e[l]) return PT.e[l];
+    return l.split(' · ').map(function (x) { return PT.e[x] || x; }).join(' · ');
+  }
+  function paintLang() { $('langBtn').textContent = lang.toUpperCase(); document.documentElement.lang = lang === 'pt' ? 'pt-BR' : 'en'; }
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   /* imagens vêm em pacotes de 80 (img-0.json = #1 a #20 etc.), carregados sob demanda */
   var PER = 80, MPER = 50, packs = {};
@@ -343,7 +371,7 @@
       return '<div class="stat"><span class="k">' + STAT_PT[i] + '</span><span class="v">' + v + '</span><div class="track"><div class="fill" data-w="' + Math.min(100, Math.round(v / 180 * 100)) + '"></div></div></div>';
     }).join('');
     var total = p.stats.reduce(function (a, b) { return a + b; }, 0);
-    var abil = p.abil.map(function (a) { return '<span class="' + (a[1] ? 'hid' : '') + '">' + esc(pretty(a[0])) + (a[1] ? ' (oculta)' : '') + '</span>'; }).join('');
+    var abil = p.abil.map(function (a) { return '<span class="' + (a[1] ? 'hid' : '') + '">' + esc(trAbil(a[0])) + (a[1] ? (usePT() ? ' (oculta)' : ' (hidden)') : '') + '</span>'; }).join('');
     if (!p.abil.length) abil = '<span class="noevo">Sem habilidades na PokéAPI ainda.</span>';
     var mu = matchups(p.types);
     var weakHtml = mu.weak.length ? mu.weak.map(function (w) {
@@ -354,13 +382,13 @@
     }).join('') : '<span class="noevo">Nenhuma vantagem de tipo.</span>';
     $('sheet').innerHTML =
       '<div class="hero" id="hero">' +
-        '<div class="sheet-top"><div class="nav"><button id="prev" type="button" aria-label="Anterior">‹</button><button id="next" type="button" aria-label="Próximo">›</button></div><button id="x" type="button" aria-label="Fechar">✕</button></div>' +
-        '<div class="titles"><div class="id">' + (p.mega ? pad(p.base) + ' · Mega Evolução' : pad(p.id)) + '</div><h2>' + esc(pretty(p.name)) + '</h2><div class="genus">' + esc(p.genus) + '</div>' +
+        '<div class="sheet-top"><div class="nav"><button id="prev" type="button" aria-label="Anterior">‹</button><button id="next" type="button" aria-label="Próximo">›</button></div><div class="right"><button class="lang" id="langSheet" type="button" aria-label="Alternar idioma do conteúdo: português ou inglês">' + lang.toUpperCase() + '</button><button id="x" type="button" aria-label="Fechar">✕</button></div></div>' +
+        '<div class="titles"><div class="id">' + (p.mega ? pad(p.base) + ' · Mega Evolução' : pad(p.id)) + '</div><h2>' + esc(pretty(p.name)) + '</h2><div class="genus">' + esc(trGenus(p.genus)) + '</div>' +
         '<div class="types">' + p.types.map(function (t) { return '<span class="type t-' + t + '">' + (TYPE_PT[t] || t) + '</span>'; }).join('') + '</div></div>' +
         '<div class="stage">' + img(p.id, p.name) + '</div>' +
       '</div>' +
       '<div class="body">' +
-        (p.flavor ? '<p class="desc">' + esc(p.flavor) + '</p>' : '') +
+        (trFlavor(p) ? '<p class="desc">' + esc(trFlavor(p)) + '</p>' : '') +
         '<div class="facts"><div class="fact"><b>' + (p.h / 10).toFixed(1).replace('.', ',') + ' m</b><span>Altura</span></div>' +
         '<div class="fact"><b>' + (p.w / 10).toFixed(1).replace('.', ',') + ' kg</b><span>Peso</span></div>' +
         '<div class="fact"><b>' + (p.xp || '—') + '</b><span>XP base</span></div></div>' +
@@ -378,6 +406,7 @@
       document.querySelectorAll('.fill').forEach(function (f) { f.style.width = f.dataset.w + '%'; });
     }); });
     $('x').onclick = closeSheet;
+    $('langSheet').onclick = toggleLang;
     $('prev').onclick = function () { openPokemon(neighbor(p.id, -1)); };
     $('next').onclick = function () { openPokemon(neighbor(p.id, 1)); };
     var chain = D.c[p.chain];
@@ -391,7 +420,7 @@
     var s = byId[node.i]; if (!s) return '';
     var out = '<div class="evo-node"><button class="evo' + (node.i === cur ? ' cur' : '') + '" type="button" data-open="' + node.i + '">' + img(node.i, s.name) + '<div>' + esc(pretty(s.name)) + '</div><small>' + pad(node.i) + '</small></button>';
     var kids = node.e.map(function (b) {
-      return '<div class="branch"><div class="arrow"><b>→</b><span>' + esc(b[0]) + '</span></div>' + renderNode(b[1], cur) + '</div>';
+      return '<div class="branch"><div class="arrow"><b>→</b><span>' + esc(trEvo(b[0])) + '</span></div>' + renderNode(b[1], cur) + '</div>';
     });
     (megasByBase[node.i] || []).forEach(function (mid) {   /* Mega Evolução como ramo final do Pokémon */
       var m = byId[mid];
@@ -426,6 +455,17 @@
     var n = cur === 'dark' ? 'light' : 'dark'; root.setAttribute('data-theme', n);
     try { localStorage.setItem('pk-theme', n); } catch (e) {}
   };
+
+  paintLang();
+  $('langBtn').onclick = toggleLang;
+  function toggleLang() {
+    lang = lang === 'pt' ? 'en' : 'pt';
+    try { localStorage.setItem('pk-lang', lang); } catch (e) {}
+    paintLang();
+    var go = function () { if (openId) buildSheet(byId[openId]); };
+    if (lang === 'pt' && !PT) loadPT().then(go, function () { lang = 'en'; paintLang(); go(); }); else go();
+  }
+  if (lang === 'pt') loadPT().then(function () { if (openId) buildSheet(byId[openId]); }, function () {});
 
   init();
 })();
