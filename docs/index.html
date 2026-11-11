@@ -221,23 +221,27 @@
   var $ = function (id) { return document.getElementById(id); };
 
   var D = null, byId = {}, byName = {}, all = [], typeSets = {};
-  var typeFilter = null, current = [], shown = 0, navList = [], openId = null, timer;
+  var typeKey = '', megaOnly = false, current = [], shown = 0, navList = [], openId = null, timer;
+  /* Mega Evoluções: lista própria (D.m), fora do "Todos"; aparecem no filtro Mega e na busca por nome */
+  var megaList = [], megaTypeSets = {}, megasByBase = {}, megaPos = {};
 
   function pad(n) { return '#' + String(n).padStart(4, '0'); }
   function pretty(s) { return String(s).replace(/-/g, ' '); }
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   /* imagens vêm em pacotes de 80 (img-0.json = #1 a #20 etc.), carregados sob demanda */
-  var PER = 80, packs = {};
-  function loadPack(k) {
-    if (!packs[k]) packs[k] = fetch('img-' + k + '.json').then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).catch(function (e) { delete packs[k]; throw e; });
-    return packs[k];
+  var PER = 80, MPER = 50, packs = {};
+  function loadPack(f) {
+    if (!packs[f]) packs[f] = fetch(f).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).catch(function (e) { delete packs[f]; throw e; });
+    return packs[f];
   }
   function img(id, alt) { return '<img decoding="async" data-img="' + id + '" alt="' + esc(alt) + '">'; }
   function hydrate(root) {
     root.querySelectorAll('img[data-img]:not([src])').forEach(function (el) {
-      var id = +el.dataset.img;
-      loadPack(Math.floor((id - 1) / PER)).then(function (arr) {
-        var b = arr[(id - 1) % PER]; if (b) el.src = 'data:image/png;base64,' + b;
+      var id = +el.dataset.img, file, idx;
+      if (id >= 10000) { var pos = megaPos[id]; file = 'img-m' + Math.floor(pos / MPER) + '.json'; idx = pos % MPER; }   /* Megas: pacotes img-m0, img-m1... */
+      else { file = 'img-' + Math.floor((id - 1) / PER) + '.json'; idx = (id - 1) % PER; }
+      loadPack(file).then(function (arr) {
+        var b = arr[idx]; if (b) el.src = 'data:image/png;base64,' + b;
       }).catch(function () {});
     });
   }
@@ -251,7 +255,14 @@
         byId[o.id] = o; byName[o.name] = o.id; all.push({ id: o.id, name: o.name });
         o.types.forEach(function (t) { (typeSets[t] = typeSets[t] || new Set()).add(o.id); });
       });
-      $('chips').innerHTML = '<button class="chip on" type="button" data-type="">Todos</button>' + Object.keys(TYPE_PT).map(function (t) {
+      (D.m || []).forEach(function (a, i) {
+        var b = byId[a[3]] || {};
+        var o = { id: a[0], slug: a[1], name: a[2], base: a[3], types: a[4], h: a[5], w: a[6], xp: a[7], stats: a[8], abil: a[9], mega: true, genus: b.genus || '', flavor: b.flavor || '', chain: b.chain };
+        byId[o.id] = o; byName[o.slug] = o.id; megaPos[o.id] = i; megaList.push({ id: o.id, name: o.name });
+        (megasByBase[o.base] = megasByBase[o.base] || []).push(o.id);
+        o.types.forEach(function (t) { (megaTypeSets[t] = megaTypeSets[t] || new Set()).add(o.id); });
+      });
+      $('chips').innerHTML = '<button class="chip on" type="button" data-type="">Todos</button><button class="chip" type="button" data-mega="1" aria-pressed="false">Mega</button>' + Object.keys(TYPE_PT).map(function (t) {
         return '<button class="chip t-' + t + '" type="button" data-type="' + t + '">' + TYPE_PT[t] + '</button>';
       }).join('');
       applyFilters(); route();
@@ -263,20 +274,25 @@
 
   function applyFilters() {
     var q = $('q').value.trim().toLowerCase().replace(/^#/, '');
-    current = all.filter(function (p) {
-      if (typeFilter && !typeFilter.has(p.id)) return false;
-      return !q || p.name.indexOf(q) !== -1 || String(p.id) === q.replace(/^0+/, '');
+    var tset = typeKey ? ((megaOnly ? megaTypeSets : typeSets)[typeKey] || new Set()) : null;
+    current = (megaOnly ? megaList : all).filter(function (p) {
+      if (tset && !tset.has(p.id)) return false;
+      return !q || p.name.indexOf(q) !== -1 || (!megaOnly && String(p.id) === q.replace(/^0+/, ''));
     });
+    if (!megaOnly && q) {   /* na busca por nome, as Megas aparecem depois dos Pokémon comuns */
+      var mset = typeKey ? (megaTypeSets[typeKey] || new Set()) : null;
+      current = current.concat(megaList.filter(function (p) { return (!mset || mset.has(p.id)) && p.name.indexOf(q) !== -1; }));
+    }
     shown = 0; $('grid').innerHTML = ''; renderMore();
   }
   function renderMore() {
     var slice = current.slice(shown, shown + PAGE);
     $('grid').insertAdjacentHTML('beforeend', slice.map(function (p) {
-      return '<button class="card" type="button" data-id="' + p.id + '" aria-label="' + esc(pretty(p.name)) + '"><span class="num">' + pad(p.id) + '</span><div class="art">' + img(p.id, p.name) + '</div><h3>' + esc(pretty(p.name)) + '</h3></button>';
+      return '<button class="card" type="button" data-id="' + p.id + '" aria-label="' + esc(pretty(p.name)) + '"><span class="num">' + (p.id >= 10000 ? pad(byId[p.id].base) + ' MEGA' : pad(p.id)) + '</span><div class="art">' + img(p.id, p.name) + '</div><h3>' + esc(pretty(p.name)) + '</h3></button>';
     }).join(''));
     shown += slice.length; hydrate($('grid'));
     $('more').hidden = shown >= current.length;
-    $('count').textContent = current.length + ' Pokémon';
+    $('count').textContent = megaOnly ? current.length + (current.length === 1 ? ' Mega Evolução' : ' Mega Evoluções') : current.length + ' Pokémon';
     if (!current.length) $('grid').innerHTML = '<div class="empty">Nenhum Pokémon encontrado.<br>Tente outro nome ou número.</div>';
   }
 
@@ -293,8 +309,14 @@
   });
   $('chips').addEventListener('click', function (e) {
     var b = e.target.closest('.chip'); if (!b) return;
-    document.querySelectorAll('.chip').forEach(function (x) { x.classList.toggle('on', x === b); });
-    typeFilter = b.dataset.type ? typeSets[b.dataset.type] : null;
+    if (b.dataset.mega) megaOnly = !megaOnly;            /* Mega liga/desliga e combina com o filtro de tipo */
+    else if (b.dataset.type) typeKey = b.dataset.type;
+    else { typeKey = ''; megaOnly = false; }              /* Todos */
+    document.querySelectorAll('.chip').forEach(function (x) {
+      var on = x.dataset.mega ? megaOnly : x.dataset.type ? x.dataset.type === typeKey : (!typeKey && !megaOnly);
+      x.classList.toggle('on', on);
+      if (x.dataset.mega) x.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
     applyFilters();
   });
   $('rand').onclick = function () { navList = []; openPokemon(1 + Math.floor(Math.random() * all.length)); };
@@ -311,6 +333,7 @@
   function neighbor(id, dir) {
     var i = navList.indexOf(id);
     if (i !== -1 && navList[i + dir]) return navList[i + dir];
+    if (id >= 10000) return megaList[(megaPos[id] + dir + megaList.length) % megaList.length].id;   /* Mega: anda só entre as Megas */
     var n = id + dir; return n < 1 ? all.length : n > all.length ? 1 : n;
   }
   function cssVar(cls) { var e = document.createElement('span'); e.className = cls; document.body.appendChild(e); var v = getComputedStyle(e).getPropertyValue('--tc'); e.remove(); return v; }
@@ -321,6 +344,7 @@
     }).join('');
     var total = p.stats.reduce(function (a, b) { return a + b; }, 0);
     var abil = p.abil.map(function (a) { return '<span class="' + (a[1] ? 'hid' : '') + '">' + esc(pretty(a[0])) + (a[1] ? ' (oculta)' : '') + '</span>'; }).join('');
+    if (!p.abil.length) abil = '<span class="noevo">Sem habilidades na PokéAPI ainda.</span>';
     var mu = matchups(p.types);
     var weakHtml = mu.weak.length ? mu.weak.map(function (w) {
       return '<span class="type t-' + w[0] + '">' + TYPE_PT[w[0]] + ' <b>×' + w[1] + '</b></span>';
@@ -331,7 +355,7 @@
     $('sheet').innerHTML =
       '<div class="hero" id="hero">' +
         '<div class="sheet-top"><div class="nav"><button id="prev" type="button" aria-label="Anterior">‹</button><button id="next" type="button" aria-label="Próximo">›</button></div><button id="x" type="button" aria-label="Fechar">✕</button></div>' +
-        '<div class="titles"><div class="id">' + pad(p.id) + '</div><h2>' + esc(pretty(p.name)) + '</h2><div class="genus">' + esc(p.genus) + '</div>' +
+        '<div class="titles"><div class="id">' + (p.mega ? pad(p.base) + ' · Mega Evolução' : pad(p.id)) + '</div><h2>' + esc(pretty(p.name)) + '</h2><div class="genus">' + esc(p.genus) + '</div>' +
         '<div class="types">' + p.types.map(function (t) { return '<span class="type t-' + t + '">' + (TYPE_PT[t] || t) + '</span>'; }).join('') + '</div></div>' +
         '<div class="stage">' + img(p.id, p.name) + '</div>' +
       '</div>' +
@@ -357,7 +381,7 @@
     $('prev').onclick = function () { openPokemon(neighbor(p.id, -1)); };
     $('next').onclick = function () { openPokemon(neighbor(p.id, 1)); };
     var chain = D.c[p.chain];
-    $('evo').innerHTML = (!chain || !chain.e.length)
+    $('evo').innerHTML = (!chain || (!chain.e.length && !treeHasMega(chain)))
       ? '<p class="noevo">Este Pokémon não evolui nem tem pré-evolução.</p>'
       : '<div class="evo-tree">' + renderNode(chain, p.id) + '</div>';
     hydrate($('sheet'));
@@ -366,12 +390,18 @@
   function renderNode(node, cur) {
     var s = byId[node.i]; if (!s) return '';
     var out = '<div class="evo-node"><button class="evo' + (node.i === cur ? ' cur' : '') + '" type="button" data-open="' + node.i + '">' + img(node.i, s.name) + '<div>' + esc(pretty(s.name)) + '</div><small>' + pad(node.i) + '</small></button>';
-    if (node.e.length) {
-      out += '<div class="branches">' + node.e.map(function (b) {
-        return '<div class="branch"><div class="arrow"><b>→</b><span>' + esc(b[0]) + '</span></div>' + renderNode(b[1], cur) + '</div>';
-      }).join('') + '</div>';
-    }
+    var kids = node.e.map(function (b) {
+      return '<div class="branch"><div class="arrow"><b>→</b><span>' + esc(b[0]) + '</span></div>' + renderNode(b[1], cur) + '</div>';
+    });
+    (megasByBase[node.i] || []).forEach(function (mid) {   /* Mega Evolução como ramo final do Pokémon */
+      var m = byId[mid];
+      kids.push('<div class="branch"><div class="arrow"><b>→</b><span>Mega Evolução</span></div><div class="evo-node"><button class="evo' + (mid === cur ? ' cur' : '') + '" type="button" data-open="' + mid + '">' + img(mid, m.name) + '<div>' + esc(pretty(m.name)) + '</div><small>Mega</small></button></div></div>');
+    });
+    if (kids.length) out += '<div class="branches">' + kids.join('') + '</div>';
     return out + '</div>';
+  }
+  function treeHasMega(node) {
+    return !!megasByBase[node.i] || node.e.some(function (b) { return treeHasMega(b[1]); });
   }
 
   $('sheet').addEventListener('click', function (e) {

@@ -1,6 +1,6 @@
-const V = 'pokedex-v4';
+const V = 'pokedex-v5';
 const SHELL = ['./', 'index.html', 'data.json', 'manifest.webmanifest', 'apple-touch-icon.png', 'icon-512.png'];
-const PACKS = Array.from({ length: 13 }, (_, i) => 'img-' + i + '.json');
+const PACKS = Array.from({ length: 13 }, (_, i) => 'img-' + i + '.json').concat(['img-m0.json', 'img-m1.json']);
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(V).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
