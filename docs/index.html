@@ -178,13 +178,22 @@
   body { padding-bottom: 76px; }
   #icats { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
   #icats .fbtn { flex: none; }
-  .card .art .ico { width: 74%; height: 74%; object-fit: contain; image-rendering: auto; }
-  .ibig { width: 128px; height: 128px; object-fit: contain; filter: drop-shadow(0 6px 6px rgba(0,0,0,.3)); }
+  .card .art .ico { width: 78%; height: 78%; object-fit: contain; filter: none; }
+  .ibig { width: 128px; height: 128px; object-fit: contain; filter: none; }
   .ihead { text-align: center; background: var(--surface-2); border-radius: 20px; padding: 18px 0 16px; }
   .ihead h2 { margin: 10px 0 6px; } #igrid .card h3 { text-transform: none; }
   .ihead .fbtn { display: inline-block; padding: 2px 12px; font-size: .8rem; }
   .idesc { margin: 16px 2px 6px; line-height: 1.55; }
   .inote { color: var(--muted); font-size: .8rem; margin: 6px 2px 0; }
+  .sec { font-size: .8rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin: 4px 2px 8px; }
+  .cg { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-bottom: 14px; }
+  .cg button { display: flex; align-items: center; gap: 8px; border: 2px solid transparent; background: var(--surface-2); color: var(--text); border-radius: 14px; padding: 6px 10px 6px 6px; font-weight: 600; font-size: .9rem; text-align: left; }
+  .cg button img { width: 38px; height: 38px; flex: none; }
+  .cg button.sel { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, var(--surface-2)); }
+  .sg { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .fgo { display: flex; gap: 8px; margin-top: 8px; }
+  .fgo .fbtn { flex: 1; justify-content: center; }
+  .fgo .fbtn:first-child { flex: 2; }
   .iempty { grid-column: 1 / -1; text-align: center; color: var(--muted); padding: 30px 0; }
 </style></head><body><header class="top">
   <div class="bar">
@@ -349,9 +358,9 @@
       if (tset && !tset.has(p.id)) return false;
       return !q || p.name.indexOf(q) !== -1 || (!megaOnly && String(p.id) === q.replace(/^0+/, ''));
     });
-    if (!megaOnly && q) {   /* na busca por nome, as Megas aparecem depois dos Pokémon comuns */
+    if (!megaOnly && (q || typeKey)) {   /* na busca por nome ou por tipo, as Megas aparecem depois dos Pokémon comuns */
       var mset = typeKey ? (megaTypeSets[typeKey] || new Set()) : null;
-      current = current.concat(megaList.filter(function (p) { return (!mset || mset.has(p.id)) && p.name.indexOf(q) !== -1; }));
+      current = current.concat(megaList.filter(function (p) { return (!mset || mset.has(p.id)) && (!q || p.name.indexOf(q) !== -1); }));
     }
     shown = 0; $('grid').innerHTML = ''; renderMore();
   }
@@ -562,35 +571,72 @@
       $('iretry').onclick = loadItems;
     });
   }
+  function svgUrl(t) { return 'data:image/svg+xml;utf8,' + encodeURIComponent(t); }
+  var isub = '';
+  var SUBS = {
+    'Pokébolas': [['padrao', 'Padrão', 'Standard'], ['especial', 'Especiais', 'Special']],
+    'Medicamentos': [['ps', 'Cura de PS', 'HP healing'], ['status', 'Cura de status', 'Status cure'], ['pp', 'Restaura PP', 'PP restore'], ['reviver', 'Reviver', 'Revive']],
+    'Evolução': [['pedras', 'Pedras', 'Stones'], ['troca', 'Troca', 'Trade'], ['outros', 'Outros', 'Other']],
+    'Frutas': [['cura', 'Cura', 'Healing'], ['atributos', 'Atributos', 'Stat boost'], ['resistencia', 'Resistência a tipo', 'Type resist'], ['retaliacao', 'Retaliação', 'Retaliation'], ['ev', 'Esforço (EV)', 'EV reducing'], ['culinaria', 'Culinária', 'Cooking']]
+  };
+  function subName(c, g) { var r = SUBS[c].filter(function (x) { return x[0] === g; })[0]; return r ? r[lang === 'pt' ? 1 : 2] : ''; }
+  function iconOf(c) { var m = { 'Pokébolas': 'poke-ball', 'Medicamentos': 'potion', 'Evolução': 'fire-stone', 'Frutas': 'oran-berry' }[c]; var x = ITEMS && ITEMS.filter(function (y) { return y.k === m; })[0]; return x ? '<img src="' + svgUrl(x.s) + '" alt="">' : ''; }
   function paintItems() {
     $('iq').placeholder = (lang === 'pt') ? 'Buscar item (ex.: poção)' : 'Search item (e.g. potion)';
-    $('icats').innerHTML = '<button class="fbtn plain' + (!icat ? ' on' : '') + '" type="button" data-c="">' + ((lang === 'pt') ? 'Todos' : 'All') + '</button>' +
-      Object.keys(ICATS).map(function (c) { return '<button class="fbtn plain' + (c === icat ? ' on' : '') + '" type="button" data-c="' + c + '">' + icatName(c) + '</button>'; }).join('');
+    var act = icat ? icatName(icat) + (isub ? ' · ' + subName(icat, isub) : '') : '';
+    $('icats').innerHTML = '<button class="fbtn plain' + (!icat ? ' on' : '') + '" type="button" data-a="all">' + ((lang === 'pt') ? 'Todos' : 'All') + '</button>' +
+      (icat ? '<button class="fbtn on" type="button" data-a="open" aria-label="' + esc(act) + '">' + esc(act) + ' <span class="car" data-clear="1">✕</span></button>'
+        : '<button class="fbtn" type="button" data-a="open" aria-haspopup="dialog"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M7 12h10M10 18h4"/></svg>' + ((lang === 'pt') ? 'Filtrar' : 'Filter') + ' <span class="car">▾</span></button>');
     if (!ITEMS) { $('icount').textContent = ''; return; }
     var q = $('iq').value.trim().toLowerCase();
-    var l = ITEMS.filter(function (x) { return (!icat || x.c === icat) && (!q || x.p.toLowerCase().indexOf(q) !== -1 || x.n.toLowerCase().indexOf(q) !== -1); });
-    $('icount').textContent = l.length + ((lang === 'pt') ? (l.length === 1 ? ' item' : ' itens') : (l.length === 1 ? ' item' : ' items'));
+    var l = ITEMS.filter(function (x) { return (!icat || x.c === icat) && (!isub || x.g === isub) && (!q || x.p.toLowerCase().indexOf(q) !== -1 || x.n.toLowerCase().indexOf(q) !== -1); });
+    $('icount').textContent = l.length + (lang === 'pt' ? (l.length === 1 ? ' item' : ' itens') : (l.length === 1 ? ' item' : ' items'));
     $('igrid').innerHTML = l.length ? l.map(function (x) {
-      return '<button class="card" type="button" data-i="' + x.id + '"><div class="art"><img class="ico" loading="lazy" src="data:image/png;base64,' + x.i + '" alt=""></div><h3>' + esc(iname(x)) + '</h3></button>';
+      return '<button class="card" type="button" data-i="' + x.id + '"><div class="art"><img class="ico" loading="lazy" src="' + svgUrl(x.s) + '" alt=""></div><h3>' + esc(iname(x)) + '</h3></button>';
     }).join('') : '<div class="iempty">' + ((lang === 'pt') ? 'Nenhum item encontrado.' : 'No items found.') + '</div>';
   }
+  var fov = document.createElement('div'); fov.className = 'ov'; fov.id = 'fov'; fov.setAttribute('role', 'dialog'); fov.setAttribute('aria-modal', 'true');
+  document.body.appendChild(fov);
+  function openFilter() {
+    var pt = lang === 'pt';
+    fov.setAttribute('aria-label', pt ? 'Filtrar itens' : 'Filter items');
+    var n = ITEMS ? ITEMS.filter(function (x) { return (!icat || x.c === icat) && (!isub || x.g === isub); }).length : 0;
+    fov.innerHTML = '<div class="panel"><div class="grab"></div><h3>' + (pt ? 'Filtrar itens' : 'Filter items') + '</h3><div class="sec">' + (pt ? 'Categoria' : 'Category') + '</div><div class="cg">' +
+      Object.keys(ICATS).map(function (c) { return '<button type="button" class="' + (c === icat ? 'sel' : '') + '" data-fc="' + c + '">' + iconOf(c) + icatName(c) + '</button>'; }).join('') + '</div>' +
+      (icat ? '<div class="sec">' + (pt ? 'Tipo de item' : 'Item kind') + '</div><div class="sg">' + SUBS[icat].map(function (x) { return '<button type="button" class="fbtn plain' + (x[0] === isub ? ' on' : '') + '" data-fs="' + x[0] + '">' + x[lang === 'pt' ? 1 : 2] + '</button>'; }).join('') + '</div>' : '') +
+      '<div class="fgo"><button type="button" class="fbtn plain on" data-fgo="1">' + (pt ? 'Ver ' + n + ' itens' : 'Show ' + n + ' items') + '</button><button type="button" class="fbtn plain" data-fx="1">' + (pt ? 'Limpar' : 'Clear') + '</button></div></div>';
+    fov.classList.add('open');
+  }
+  fov.addEventListener('click', function (e) {
+    var c = e.target.closest('[data-fc]'), g = e.target.closest('[data-fs]');
+    if (c) { icat = (icat === c.dataset.fc) ? '' : c.dataset.fc; isub = ''; openFilter(); paintItems(); }
+    else if (g) { isub = (isub === g.dataset.fs) ? '' : g.dataset.fs; openFilter(); paintItems(); }
+    else if (e.target.closest('[data-fx]')) { icat = ''; isub = ''; fov.classList.remove('open'); paintItems(); }
+    else if (e.target.closest('[data-fgo]') || e.target === fov) fov.classList.remove('open');
+  });
   var iov = document.createElement('div'); iov.className = 'ov'; iov.id = 'iov'; iov.setAttribute('role', 'dialog'); iov.setAttribute('aria-modal', 'true');
   document.body.appendChild(iov);
   var openItemId = null;
   function openItem(id) {
     var x = ITEMS.filter(function (y) { return y.id === id; })[0]; if (!x) return;
     openItemId = id; iov.setAttribute('aria-label', iname(x));
-    iov.innerHTML = '<div class="panel"><div class="grab"></div><div class="ihead"><img class="ibig" src="data:image/png;base64,' + x.i + '" alt=""><h2>' + esc(iname(x)) + '</h2><span class="fbtn plain">' + icatName(x.c) + '</span></div><p class="idesc">' + esc(ieff(x)) + '</p><p class="inote">' + ((lang === 'pt') ? 'Efeitos conforme a PokéAPI; valores podem variar entre gerações. Nomes e textos em português são não oficiais.' : 'Effects as listed by PokéAPI; values may vary between generations.') + '</p></div>';
+    iov.innerHTML = '<div class="panel"><div class="grab"></div><div class="ihead"><img class="ibig" src="' + svgUrl(x.s) + '" alt=""><h2>' + esc(iname(x)) + '</h2><span class="fbtn plain">' + icatName(x.c) + '</span></div><p class="idesc">' + esc(ieff(x)) + '</p><p class="inote">' + ((lang === 'pt') ? 'Efeitos conforme a PokéAPI; valores podem variar entre gerações. Nomes e textos em português são não oficiais.' : 'Effects as listed by PokéAPI; values may vary between generations.') + '</p></div>';
     iov.classList.add('open');
   }
   iov.addEventListener('click', function (e) { if (e.target === iov) { iov.classList.remove('open'); openItemId = null; } });
-  $('icats').addEventListener('click', function (e) { var c = e.target.closest('[data-c]'); if (!c) return; icat = c.dataset.c; paintItems(); });
+  $('icats').addEventListener('click', function (e) {
+    var b = e.target.closest('.fbtn'); if (!b) return;
+    if (b.dataset.a === 'all') { icat = ''; isub = ''; paintItems(); }
+    else if (e.target.closest('[data-clear]')) { icat = ''; isub = ''; paintItems(); }
+    else openFilter();
+  });
   $('iq').addEventListener('input', paintItems);
   $('igrid').addEventListener('click', function (e) { var i = e.target.closest('[data-i]'); if (i) openItem(+i.dataset.i); });
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { tov.classList.remove('open'); iov.classList.remove('open'); openItemId = null; } });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { tov.classList.remove('open'); fov.classList.remove('open'); iov.classList.remove('open'); openItemId = null; } });
   window.__repaintLang = function () {
     paintBar(); paintItems(); tabLabels();
     if (tov.classList.contains('open')) openTypes();
+    if (fov.classList.contains('open')) openFilter();
     if (iov.classList.contains('open') && ITEMS) openItem(openItemId);
   };
 

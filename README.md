@@ -10,11 +10,12 @@ Pokédex com os dados da [PokéAPI](https://pokeapi.co/): busca por nome ou núm
 - As Megas usam a descrição e a categoria do Pokémon original.
 
 ## Filtro por tipo
-- O botão **Tipo ▾** abre uma grade com os 18 tipos e seus ícones; depois de escolher, o tipo vira uma etiqueta com ícone e um **✕** para limpar. Combina com **Mega** e com a busca.
+- O botão **Tipo ▾** abre uma grade com os 18 tipos e seus ícones; depois de escolher, o tipo vira uma etiqueta com ícone e um **✕** para limpar. Combina com **Mega** e com a busca. Ao filtrar por tipo, as Mega Evoluções daquele tipo aparecem junto, depois dos Pokémon comuns.
 
 ## Itens
-- A aba **Itens** (barra inferior) lista 142 itens em quatro categorias: Pokébolas, Medicamentos, Evolução e Frutas, com busca, imagem em arte nítida e ficha com o efeito.
-- Dados e imagens vêm da PokéAPI/PokeAPI sprites; os efeitos podem variar entre gerações. Nomes e textos em português **não são oficiais**; o botão PT/EN também vale para os itens.
+- A aba **Itens** (barra inferior) lista 142 itens: Pokébolas, Medicamentos, Evolução e Frutas, com busca e uma ficha com o efeito de cada um.
+- O botão **Filtrar** abre um painel com a categoria e o tipo de item (ex.: Medicamentos › Reviver, Frutas › Resistência a tipo).
+- Os ícones são ilustrações vetoriais (SVG) próprias do projeto, em estilo moderno, e não arte oficial. Os efeitos vêm da PokéAPI e podem variar entre gerações; nomes e textos em português **não são oficiais**. O botão PT/EN também vale para os itens.
 
 ## Mega Evoluções
 - O filtro **Mega** (ao lado de "Todos") mostra só as Megas e combina com o filtro de tipo.
