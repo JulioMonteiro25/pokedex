@@ -669,10 +669,11 @@
   });
   $('iq').addEventListener('input', paintItems);
   $('igrid').addEventListener('click', function (e) { var i = e.target.closest('[data-i]'); if (i) openItem(+i.dataset.i); });
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { tov.classList.remove('open'); fov.classList.remove('open'); iov.classList.remove('open'); bov.classList.remove('open'); openItemId = null; bopenId = null; } });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { tov.classList.remove('open'); fov.classList.remove('open'); iov.classList.remove('open'); bov.classList.remove('open'); bfov.classList.remove('open'); openItemId = null; bopenId = null; } });
   window.__repaintLang = function () {
     paintBar(); paintItems(); paintBadges(); tabLabels();
     if (bov.classList.contains('open') && BADGES) openBadge(bopenId);
+    if (bfov.classList.contains('open')) openBFilter();
     if (tov.classList.contains('open')) openTypes();
     if (fov.classList.contains('open')) openFilter();
     if (iov.classList.contains('open') && ITEMS) openItem(openItemId);
@@ -692,26 +693,56 @@
       $('bretry').onclick = loadBadges;
     });
   }
+  var btypes = [], bstat = '';
+  function bok(x) {
+    if (bregs.length && bregs.indexOf(x.r) === -1) return false;
+    if (btypes.length && btypes.indexOf(x.t) === -1) return false;
+    if (bstat === 'own' && !bown[x.id]) return false;
+    if (bstat === 'miss' && bown[x.id]) return false;
+    return true;
+  }
   function paintBadges() {
     var pt = lang === 'pt';
     $('bq').placeholder = pt ? 'Buscar insígnia, líder ou cidade' : 'Search badge, leader or city';
-    $('bregs').innerHTML = '<button class="fbtn plain' + (!bregs.length && !bonlyOwn ? ' on' : '') + '" type="button" data-a="all">' + (pt ? 'Todas' : 'All') + '</button>' +
-      '<button class="fbtn plain' + (bonlyOwn ? ' on' : '') + '" type="button" data-a="own" aria-pressed="' + bonlyOwn + '">✓ ' + (pt ? 'Conquistadas' : 'Collected') + '</button>' +
-      REGS.map(function (r) { return '<button class="fbtn plain' + (bregs.indexOf(r) !== -1 ? ' on' : '') + '" type="button" data-r="' + r + '" aria-pressed="' + (bregs.indexOf(r) !== -1) + '">' + r + '</button>'; }).join('');
+    var any = bregs.length || btypes.length || bstat;
+    $('bregs').innerHTML = '<button class="fbtn plain' + (!any ? ' on' : '') + '" type="button" data-a="all">' + (pt ? 'Todas' : 'All') + '</button>' +
+      bregs.map(function (r) { return '<button class="fbtn on" type="button" data-a="rr" data-v="' + r + '">' + r + ' <span class="car">✕</span></button>'; }).join('') +
+      btypes.map(function (t) { return '<button class="fbtn on t-' + t + '" type="button" data-a="rt" data-v="' + t + '"><img src="' + tIcon(t) + '" alt="">' + TYPE_PT[t] + ' <span class="car">✕</span></button>'; }).join('') +
+      (bstat ? '<button class="fbtn on" type="button" data-a="rs">' + (bstat === 'own' ? (pt ? 'Conquistadas' : 'Collected') : (pt ? 'Faltam' : 'Missing')) + ' <span class="car">✕</span></button>' : '') +
+      '<button class="fbtn" type="button" data-a="open" aria-haspopup="dialog"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="' + (any ? 'M12 5v14M5 12h14' : 'M4 6h16M7 12h10M10 18h4') + '"/></svg>' + (pt ? 'Filtrar' : 'Filter') + '</button>';
     var n = ownCount();
     $('bown').textContent = BADGES ? (n + '/' + BADGES.length + (pt ? ' conquistadas' : ' collected')) : '';
     if (!BADGES) { $('bcount').textContent = ''; return; }
     var q = $('bq').value.trim().toLowerCase();
     var l = BADGES.filter(function (x) {
-      if (bregs.length && bregs.indexOf(x.r) === -1) return false;
-      if (bonlyOwn && !bown[x.id]) return false;
-      return !q || (x.n + ' ' + x.l + ' ' + x.c + ' ' + x.r + ' ' + TYPE_PT[x.t]).toLowerCase().indexOf(q) !== -1 || x.t.indexOf(q) !== -1;
+      return bok(x) && (!q || (x.n + ' ' + x.l + ' ' + x.c + ' ' + x.r + ' ' + TYPE_PT[x.t]).toLowerCase().indexOf(q) !== -1 || x.t.indexOf(q) !== -1);
     });
     $('bcount').textContent = l.length + (pt ? (l.length === 1 ? ' insígnia' : ' insígnias') : (l.length === 1 ? ' badge' : ' badges'));
     $('bgrid').innerHTML = l.length ? l.map(function (x) {
       return '<button class="card bcard' + (bown[x.id] ? ' own' : '') + (n ? ' anyown' : '') + '" type="button" data-b="' + x.id + '"><div class="art"><img class="ico" loading="lazy" src="data:image/png;base64,' + x.i + '" alt=""></div>' + (bown[x.id] ? '<span class="chk" aria-label="' + (pt ? 'conquistada' : 'collected') + '">✓</span>' : '') + '<h3>' + esc(bname(x)) + '</h3><small>' + x.r + '</small></button>';
     }).join('') : '<div class="iempty">' + (pt ? 'Nenhuma insígnia encontrada.' : 'No badges found.') + '</div>';
   }
+  var bfov = document.createElement('div'); bfov.className = 'ov'; bfov.id = 'bfov'; bfov.setAttribute('role', 'dialog'); bfov.setAttribute('aria-modal', 'true');
+  document.body.appendChild(bfov);
+  function openBFilter() {
+    var pt = lang === 'pt';
+    bfov.setAttribute('aria-label', pt ? 'Filtrar insígnias' : 'Filter badges');
+    var n = BADGES ? BADGES.filter(bok).length : 0;
+    bfov.innerHTML = '<div class="panel"><div class="grab"></div><h3>' + (pt ? 'Filtrar insígnias' : 'Filter badges') + ' <small>' + (pt ? 'escolha um ou mais' : 'pick one or more') + '</small></h3>' +
+      '<div class="sec">' + (pt ? 'Região' : 'Region') + '</div><div class="sg">' + REGS.map(function (r) { return '<button type="button" class="fbtn plain' + (bregs.indexOf(r) !== -1 ? ' on' : '') + '" data-fr="' + r + '" aria-pressed="' + (bregs.indexOf(r) !== -1) + '">' + r + '</button>'; }).join('') + '</div>' +
+      '<div class="sec">' + (pt ? 'Tipo do ginásio' : 'Gym type') + '</div><div class="tg" style="margin-bottom:14px">' + TORDER.map(function (t) { return '<button type="button" class="t-' + t + (btypes.indexOf(t) !== -1 ? ' sel' : '') + '" data-ft="' + t + '" aria-pressed="' + (btypes.indexOf(t) !== -1) + '"><img src="' + tIcon(t) + '" alt="">' + TYPE_PT[t] + '</button>'; }).join('') + '</div>' +
+      '<div class="sec">' + (pt ? 'Situação' : 'Status') + '</div><div class="sg"><button type="button" class="fbtn plain' + (bstat === 'own' ? ' on' : '') + '" data-fst="own">✓ ' + (pt ? 'Conquistadas' : 'Collected') + '</button><button type="button" class="fbtn plain' + (bstat === 'miss' ? ' on' : '') + '" data-fst="miss">' + (pt ? 'Faltam' : 'Missing') + '</button></div>' +
+      '<div class="fgo"><button type="button" class="fbtn plain on" data-fgo="1">' + (pt ? 'Ver ' + n + ' insígnias' : 'Show ' + n + ' badges') + '</button><button type="button" class="fbtn plain" data-fx="1">' + (pt ? 'Limpar' : 'Clear') + '</button></div></div>';
+    bfov.classList.add('open');
+  }
+  bfov.addEventListener('click', function (e) {
+    var r = e.target.closest('[data-fr]'), t = e.target.closest('[data-ft]'), st = e.target.closest('[data-fst]');
+    if (r) { toggle(bregs, r.dataset.fr); openBFilter(); paintBadges(); }
+    else if (t) { toggle(btypes, t.dataset.ft); openBFilter(); paintBadges(); }
+    else if (st) { bstat = bstat === st.dataset.fst ? '' : st.dataset.fst; openBFilter(); paintBadges(); }
+    else if (e.target.closest('[data-fx]')) { bregs = []; btypes = []; bstat = ''; bfov.classList.remove('open'); paintBadges(); }
+    else if (e.target.closest('[data-fgo]') || e.target === bfov) bfov.classList.remove('open');
+  });
   var bov = document.createElement('div'); bov.className = 'ov'; bov.id = 'bov'; bov.setAttribute('role', 'dialog'); bov.setAttribute('aria-modal', 'true');
   document.body.appendChild(bov);
   function openBadge(id) {
@@ -730,10 +761,12 @@
     else if (e.target === bov) { bov.classList.remove('open'); bopenId = null; }
   });
   $('bregs').addEventListener('click', function (e) {
-    var b = e.target.closest('.fbtn'); if (!b) return;
-    if (b.dataset.a === 'all') { bregs = []; bonlyOwn = false; }
-    else if (b.dataset.a === 'own') bonlyOwn = !bonlyOwn;
-    else { var r = b.dataset.r, i = bregs.indexOf(r); if (i === -1) bregs.push(r); else bregs.splice(i, 1); }
+    var b = e.target.closest('.fbtn'); if (!b) return; var a = b.dataset.a, v = b.dataset.v;
+    if (a === 'all') { bregs = []; btypes = []; bstat = ''; }
+    else if (a === 'rr') bregs = bregs.filter(function (x) { return x !== v; });
+    else if (a === 'rt') btypes = btypes.filter(function (x) { return x !== v; });
+    else if (a === 'rs') bstat = '';
+    else { openBFilter(); return; }
     paintBadges();
   });
   $('bq').addEventListener('input', paintBadges);
