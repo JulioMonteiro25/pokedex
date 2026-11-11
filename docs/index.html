@@ -97,6 +97,8 @@
   .hero .titles { text-align: center; padding-top: 38px; }
   .hero .id { font-weight: 700; opacity: .9; }
   .hero h2 { margin: 0; font-size: 2.2rem; text-transform: capitalize; line-height: 1.15; overflow-wrap: anywhere; }
+  .hero .region { display: inline-flex; align-items: center; gap: 5px; margin-top: 8px; font-size: .82rem; font-weight: 600; opacity: .95; }
+  .card .reg { display: block; color: var(--muted); font-size: .75rem; margin-top: 1px; }
   .hero .genus { opacity: .92; font-size: .95rem; }
   .types { display: flex; gap: 8px; justify-content: center; margin: 10px 0; flex-wrap: wrap; }
   .type { background: var(--tc); color: #fff; padding: 3px 14px; border-radius: 999px; font-weight: 700; font-size: .85rem; border: 2px solid rgba(255,255,255,.55); text-shadow: 0 1px 2px rgba(0,0,0,.35); }
@@ -393,7 +395,7 @@
   function renderMore() {
     var slice = current.slice(shown, shown + PAGE);
     $('grid').insertAdjacentHTML('beforeend', slice.map(function (p) {
-      return '<button class="card" type="button" data-id="' + p.id + '" aria-label="' + esc(pretty(p.name)) + '"><span class="num">' + (p.id >= 10000 ? pad(byId[p.id].base) + ' MEGA' : pad(p.id)) + '</span><div class="art">' + img(p.id, p.name) + '</div><h3>' + esc(pretty(p.name)) + '</h3></button>';
+      return '<button class="card" type="button" data-id="' + p.id + '" aria-label="' + esc(pretty(p.name)) + '"><span class="num">' + (p.id >= 10000 ? pad(byId[p.id].base) + ' MEGA' : pad(p.id)) + '</span><div class="art">' + img(p.id, p.name) + '</div><h3>' + esc(pretty(p.name)) + '</h3><small class="reg">' + regionOf(p.id) + '</small></button>';
     }).join(''));
     shown += slice.length; hydrate($('grid'));
     $('more').hidden = shown >= current.length;
@@ -443,6 +445,11 @@
   }
   function cssVar(cls) { var e = document.createElement('span'); e.className = cls; document.body.appendChild(e); var v = getComputedStyle(e).getPropertyValue('--tc'); e.remove(); return v; }
 
+  /* região de origem pela geração/número da Pokédex nacional (Megas seguem o Pokémon base) */
+  function regionOf(id) {
+    if (id >= 10000 && byId[id]) id = byId[id].base;
+    return id <= 151 ? 'Kanto' : id <= 251 ? 'Johto' : id <= 386 ? 'Hoenn' : id <= 493 ? 'Sinnoh' : id <= 649 ? 'Unova' : id <= 721 ? 'Kalos' : id <= 809 ? 'Alola' : id <= 898 ? 'Galar' : id <= 905 ? 'Hisui' : 'Paldea';
+  }
   function buildSheet(p) {
     var stats = p.stats.map(function (v, i) {
       return '<div class="stat"><span class="k">' + STAT_PT[i] + '</span><span class="v">' + v + '</span><div class="track"><div class="fill" data-w="' + Math.min(100, Math.round(v / 180 * 100)) + '"></div></div></div>';
@@ -461,7 +468,8 @@
       '<div class="hero" id="hero">' +
         '<div class="sheet-top"><div class="nav"><button id="prev" type="button" aria-label="Anterior">‹</button><button id="next" type="button" aria-label="Próximo">›</button></div><div class="right"><button class="lang" id="langSheet" type="button" aria-label="Alternar idioma do conteúdo: português ou inglês">' + lang.toUpperCase() + '</button><button id="x" type="button" aria-label="Fechar">✕</button></div></div>' +
         '<div class="titles"><div class="id">' + (p.mega ? pad(p.base) + ' · Mega Evolução' : pad(p.id)) + '</div><h2>' + esc(pretty(p.name)) + '</h2><div class="genus">' + esc(trGenus(p.genus)) + '</div>' +
-        '<div class="types">' + p.types.map(function (t) { return '<span class="type t-' + t + '">' + (TYPE_PT[t] || t) + '</span>'; }).join('') + '</div></div>' +
+        '<div class="types">' + p.types.map(function (t) { return '<span class="type t-' + t + '">' + (TYPE_PT[t] || t) + '</span>'; }).join('') + '</div>' +
+        '<div class="region"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg>' + (usePT() ? 'Região: ' : 'Region: ') + regionOf(p.id) + '</div></div>' +
         '<div class="stage">' + img(p.id, p.name) + '</div>' +
       '</div>' +
       '<div class="body">' +

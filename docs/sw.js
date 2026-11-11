@@ -1,4 +1,4 @@
-const V = 'pokedex-v12';
+const V = 'pokedex-v13';
 const SHELL = ['./', 'index.html', 'data.json', 'pt.json', 'itens.json', 'insignias.json', 'manifest.webmanifest', 'apple-touch-icon.png', 'icon-512.png'];
 const PACKS = Array.from({ length: 13 }, (_, i) => 'img-' + i + '.json').concat(['img-m0.json', 'img-m1.json']);
 

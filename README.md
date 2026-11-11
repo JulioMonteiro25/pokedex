@@ -9,6 +9,9 @@ Pokédex com os dados da [PokéAPI](https://pokeapi.co/): busca por nome ou núm
 - As traduções ficam em `docs/pt.json` e **não são oficiais** (a PokéAPI não tem português): nomes de Pokémon e de golpes continuam em inglês. Medidas em milhas, pés e °F foram convertidas para o sistema métrico.
 - As Megas usam a descrição e a categoria do Pokémon original.
 
+## Região
+- Cada Pokémon mostra a **região de origem** na ficha e no cartão da lista (Kanto, Johto, Hoenn, Sinnoh, Unova, Kalos, Alola, Galar, Hisui e Paldea), definida pela geração/número na Pokédex nacional. As Megas seguem a região do Pokémon base.
+
 ## Filtro por tipo
 - O botão **Tipo ▾** abre uma grade com os 18 tipos e seus ícones. Dá para escolher **mais de um tipo** e combinar como "qualquer um" ou "todos os tipos" (ex.: Fogo + Voador). Cada tipo vira uma etiqueta com ícone e **✕** para remover. Combina com **Mega** e com a busca. Ao filtrar por tipo, as Mega Evoluções daquele tipo aparecem junto, depois dos Pokémon comuns.
 
