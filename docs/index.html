@@ -179,8 +179,8 @@
   body { padding-bottom: 76px; }
   #icats { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
   #icats .fbtn { flex: none; }
-  .card .art .ico { width: 78%; height: 78%; object-fit: contain; filter: none; }
-  .ibig { width: 128px; height: 128px; object-fit: contain; filter: none; }
+  .card .art .ico { width: 74%; height: 74%; object-fit: contain; }
+  .ibig { width: 128px; height: 128px; object-fit: contain; filter: drop-shadow(0 6px 6px rgba(0,0,0,.3)); }
   .ihead { text-align: center; background: var(--surface-2); border-radius: 20px; padding: 18px 0 16px; }
   .ihead h2 { margin: 10px 0 6px; } #igrid .card h3 { text-transform: none; }
   .ihead .fbtn { display: inline-block; padding: 2px 12px; font-size: .8rem; }
@@ -579,7 +579,6 @@
       $('iretry').onclick = loadItems;
     });
   }
-  function svgUrl(t) { return 'data:image/svg+xml;utf8,' + encodeURIComponent(t); }
   var SUBS = {
     'Pokébolas': [['padrao', 'Padrão', 'Standard'], ['especial', 'Especiais', 'Special']],
     'Medicamentos': [['ps', 'Cura de PS', 'HP healing'], ['status', 'Cura de status', 'Status cure'], ['pp', 'Restaura PP', 'PP restore'], ['reviver', 'Reviver', 'Revive']],
@@ -587,7 +586,7 @@
     'Frutas': [['cura', 'Cura', 'Healing'], ['atributos', 'Atributos', 'Stat boost'], ['resistencia', 'Resistência a tipo', 'Type resist'], ['retaliacao', 'Retaliação', 'Retaliation'], ['ev', 'Esforço (EV)', 'EV reducing'], ['culinaria', 'Culinária', 'Cooking']]
   };
   function subName(c, g) { var r = SUBS[c].filter(function (x) { return x[0] === g; })[0]; return r ? r[lang === 'pt' ? 1 : 2] : ''; }
-  function iconOf(c) { var m = { 'Pokébolas': 'poke-ball', 'Medicamentos': 'potion', 'Evolução': 'fire-stone', 'Frutas': 'oran-berry' }[c]; var x = ITEMS && ITEMS.filter(function (y) { return y.k === m; })[0]; return x ? '<img src="' + svgUrl(x.s) + '" alt="">' : ''; }
+  function iconOf(c) { var m = { 'Pokébolas': 'poke-ball', 'Medicamentos': 'potion', 'Evolução': 'fire-stone', 'Frutas': 'oran-berry' }[c]; var x = ITEMS && ITEMS.filter(function (y) { return y.k === m; })[0]; return x ? '<img src="' + ('data:image/png;base64,' + x.i) + '" alt="">' : ''; }
   function iok(x) { return (!icats.length || icats.indexOf(x.c) !== -1) && (!isubs.length || isubs.indexOf(x.g) !== -1); }
   function paintItems() {
     var pt = lang === 'pt';
@@ -601,7 +600,7 @@
     var l = ITEMS.filter(function (x) { return iok(x) && (!q || x.p.toLowerCase().indexOf(q) !== -1 || x.n.toLowerCase().indexOf(q) !== -1); });
     $('icount').textContent = l.length + (pt ? (l.length === 1 ? ' item' : ' itens') : (l.length === 1 ? ' item' : ' items'));
     $('igrid').innerHTML = l.length ? l.map(function (x) {
-      return '<button class="card" type="button" data-i="' + x.id + '"><div class="art"><img class="ico" loading="lazy" src="' + svgUrl(x.s) + '" alt=""></div><h3>' + esc(iname(x)) + '</h3></button>';
+      return '<button class="card" type="button" data-i="' + x.id + '"><div class="art"><img class="ico" loading="lazy" src="' + ('data:image/png;base64,' + x.i) + '" alt=""></div><h3>' + esc(iname(x)) + '</h3></button>';
     }).join('') : '<div class="iempty">' + (pt ? 'Nenhum item encontrado.' : 'No items found.') + '</div>';
   }
   var fov = document.createElement('div'); fov.className = 'ov'; fov.id = 'fov'; fov.setAttribute('role', 'dialog'); fov.setAttribute('aria-modal', 'true');
@@ -634,7 +633,7 @@
   function openItem(id) {
     var x = ITEMS.filter(function (y) { return y.id === id; })[0]; if (!x) return;
     openItemId = id; iov.setAttribute('aria-label', iname(x));
-    iov.innerHTML = '<div class="panel"><div class="grab"></div><div class="ihead"><img class="ibig" src="' + svgUrl(x.s) + '" alt=""><h2>' + esc(iname(x)) + '</h2><span class="fbtn plain">' + icatName(x.c) + '</span></div><p class="idesc">' + esc(ieff(x)) + '</p><p class="inote">' + ((lang === 'pt') ? 'Efeitos conforme a PokéAPI; valores podem variar entre gerações. Nomes e textos em português são não oficiais.' : 'Effects as listed by PokéAPI; values may vary between generations.') + '</p></div>';
+    iov.innerHTML = '<div class="panel"><div class="grab"></div><div class="ihead"><img class="ibig" src="' + ('data:image/png;base64,' + x.i) + '" alt=""><h2>' + esc(iname(x)) + '</h2><span class="fbtn plain">' + icatName(x.c) + '</span></div><p class="idesc">' + esc(ieff(x)) + '</p><p class="inote">' + ((lang === 'pt') ? 'Efeitos conforme a PokéAPI; valores podem variar entre gerações. Nomes e textos em português são não oficiais.' : 'Effects as listed by PokéAPI; values may vary between generations.') + '</p></div>';
     iov.classList.add('open');
   }
   iov.addEventListener('click', function (e) { if (e.target === iov) { iov.classList.remove('open'); openItemId = null; } });

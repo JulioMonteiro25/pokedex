@@ -15,7 +15,7 @@ Pokédex com os dados da [PokéAPI](https://pokeapi.co/): busca por nome ou núm
 ## Itens
 - A aba **Itens** (barra inferior) lista 142 itens: Pokébolas, Medicamentos, Evolução e Frutas, com busca e uma ficha com o efeito de cada um.
 - O botão **Filtrar** abre um painel onde dá para marcar **várias categorias e tipos de item** ao mesmo tempo (ex.: Medicamentos › Reviver, Frutas › Resistência a tipo).
-- Os ícones são ilustrações vetoriais (SVG) próprias do projeto, em estilo moderno, e não arte oficial. Os efeitos vêm da PokéAPI e podem variar entre gerações; nomes e textos em português **não são oficiais**. O botão PT/EN também vale para os itens.
+- As imagens vêm do repositório PokeAPI/sprites (arte Dream World, ~90 px). Os efeitos vêm da PokéAPI e podem variar entre gerações; nomes e textos em português **não são oficiais**. O botão PT/EN também vale para os itens.
 
 ## Mega Evoluções
 - O filtro **Mega** (ao lado de "Todos") mostra só as Megas e combina com o filtro de tipo.
