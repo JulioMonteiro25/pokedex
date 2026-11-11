@@ -9,6 +9,13 @@ Pokédex com os dados da [PokéAPI](https://pokeapi.co/): busca por nome ou núm
 - As traduções ficam em `docs/pt.json` e **não são oficiais** (a PokéAPI não tem português): nomes de Pokémon e de golpes continuam em inglês. Medidas em milhas, pés e °F foram convertidas para o sistema métrico.
 - As Megas usam a descrição e a categoria do Pokémon original.
 
+## Filtro por tipo
+- O botão **Tipo ▾** abre uma grade com os 18 tipos e seus ícones; depois de escolher, o tipo vira uma etiqueta com ícone e um **✕** para limpar. Combina com **Mega** e com a busca.
+
+## Itens
+- A aba **Itens** (barra inferior) lista 142 itens em quatro categorias: Pokébolas, Medicamentos, Evolução e Frutas, com busca, imagem em arte nítida e ficha com o efeito.
+- Dados e imagens vêm da PokéAPI/PokeAPI sprites; os efeitos podem variar entre gerações. Nomes e textos em português **não são oficiais**; o botão PT/EN também vale para os itens.
+
 ## Mega Evoluções
 - O filtro **Mega** (ao lado de "Todos") mostra só as Megas e combina com o filtro de tipo.
 - A busca por nome também encontra as Megas (ex.: "charizard" mostra Charizard, Mega Charizard X e Mega Charizard Y).
@@ -34,6 +41,7 @@ docs/            o app (é a pasta publicada pelo GitHub Pages)
 ferramentas/     scripts PowerShell e a versão antiga para PC
 ```
 - `docs/index.html`, `manifest.webmanifest`, `sw.js`, ícones: o app.
+- `docs/itens.json`: itens (nomes e efeitos em PT/EN, imagem em base64), carregado ao abrir a aba Itens.
 - `docs/pt.json`: traduções para português (descrições `f`, categorias `g`, habilidades `a` e condições de evolução `e`).
 - `docs/data.json`: dados dos 1025 Pokémon (tipos, status, habilidades, evoluções) e, na chave `m`, das 97 Megas.
 - `docs/img-0.json` a `img-12.json`: imagens oficiais em pacotes de 80 (base64), carregados sob demanda.
