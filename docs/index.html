@@ -167,6 +167,7 @@
   .panel { background: var(--surface); width: 100%; max-width: 560px; max-height: 92vh; overflow-y: auto; border-radius: 24px 24px 0 0; padding: 10px 16px 30px; box-shadow: var(--shadow); }
   .grab { width: 42px; height: 5px; border-radius: 9px; background: var(--border); margin: 2px auto 14px; }
   .panel h3 { margin: 0 0 12px; font-size: 1.1rem; }
+  .panel h3 small { color: var(--muted); font-weight: 500; font-size: .8rem; margin-left: 6px; }
   .tg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; }
   .tg button { display: flex; align-items: center; gap: 9px; border: 2px solid transparent; background: var(--surface-2); color: var(--text); border-radius: 14px; padding: 8px 9px; font-weight: 600; font-size: .88rem; text-align: left; min-width: 0; }
   .tg button img { width: 32px; height: 32px; border-radius: 9px; flex: none; }
@@ -279,7 +280,7 @@
   var $ = function (id) { return document.getElementById(id); };
 
   var D = null, byId = {}, byName = {}, all = [], typeSets = {};
-  var typeKey = '', megaOnly = false, current = [], shown = 0, navList = [], openId = null, timer;
+  var typeSel = [], typeAll = false, megaOnly = false, current = [], shown = 0, navList = [], openId = null, timer;
   /* Mega Evoluções: lista própria (D.m), fora do "Todos"; aparecem no filtro Mega e na busca por nome */
   var megaList = [], megaTypeSets = {}, megasByBase = {}, megaPos = {};
 
@@ -353,14 +354,17 @@
 
   function applyFilters() {
     var q = $('q').value.trim().toLowerCase().replace(/^#/, '');
-    var tset = typeKey ? ((megaOnly ? megaTypeSets : typeSets)[typeKey] || new Set()) : null;
+    var tOK = function (id) {
+      if (!typeSel.length) return true;
+      var ty = byId[id].types;
+      return typeAll ? typeSel.every(function (t) { return ty.indexOf(t) !== -1; }) : typeSel.some(function (t) { return ty.indexOf(t) !== -1; });
+    };
     current = (megaOnly ? megaList : all).filter(function (p) {
-      if (tset && !tset.has(p.id)) return false;
+      if (!tOK(p.id)) return false;
       return !q || p.name.indexOf(q) !== -1 || (!megaOnly && String(p.id) === q.replace(/^0+/, ''));
     });
-    if (!megaOnly && (q || typeKey)) {   /* na busca por nome ou por tipo, as Megas aparecem depois dos Pokémon comuns */
-      var mset = typeKey ? (megaTypeSets[typeKey] || new Set()) : null;
-      current = current.concat(megaList.filter(function (p) { return (!mset || mset.has(p.id)) && (!q || p.name.indexOf(q) !== -1); }));
+    if (!megaOnly && (q || typeSel.length)) {   /* na busca por nome ou por tipo, as Megas aparecem depois dos Pokémon comuns */
+      current = current.concat(megaList.filter(function (p) { return tOK(p.id) && (!q || p.name.indexOf(q) !== -1); }));
     }
     shown = 0; $('grid').innerHTML = ''; renderMore();
   }
@@ -389,10 +393,10 @@
   $('chips').addEventListener('click', function (e) {
     var b = e.target.closest('.chip'); if (!b) return;
     if (b.dataset.mega) megaOnly = !megaOnly;            /* Mega liga/desliga e combina com o filtro de tipo */
-    else if (b.dataset.type) typeKey = b.dataset.type;
-    else { typeKey = ''; megaOnly = false; }              /* Todos */
+    else if (b.dataset.type) typeSel = [b.dataset.type];
+    else { typeSel = []; typeAll = false; megaOnly = false; }              /* Todos */
     document.querySelectorAll('.chip').forEach(function (x) {
-      var on = x.dataset.mega ? megaOnly : x.dataset.type ? x.dataset.type === typeKey : (!typeKey && !megaOnly);
+      var on = x.dataset.mega ? megaOnly : x.dataset.type ? typeSel.length === 1 && typeSel[0] === x.dataset.type : (!typeSel.length && !megaOnly);
       x.classList.toggle('on', on);
       if (x.dataset.mega) x.setAttribute('aria-pressed', on ? 'true' : 'false');
     });
@@ -526,39 +530,43 @@
   $('chips').parentNode.insertBefore(tbar, $('chips'));
   function tIcon(t) { return 'data:image/png;base64,' + TI[t]; }
   function paintBar() {
-    tbar.innerHTML = '<button class="fbtn plain' + (!typeKey && !megaOnly ? ' on' : '') + '" type="button" data-a="all">' + ((lang === 'pt') ? 'Todos' : 'All') + '</button>' +
+    var pt = lang === 'pt';
+    tbar.innerHTML = '<button class="fbtn plain' + (!typeSel.length && !megaOnly ? ' on' : '') + '" type="button" data-a="all">' + (pt ? 'Todos' : 'All') + '</button>' +
       '<button class="fbtn plain' + (megaOnly ? ' on' : '') + '" type="button" data-a="mega" aria-pressed="' + megaOnly + '">Mega</button>' +
-      (typeKey ? '<button class="fbtn on t-' + typeKey + '" type="button" data-a="type" aria-label="' + ((lang === 'pt') ? 'Tipo' : 'Type') + ': ' + TYPE_PT[typeKey] + '"><img src="' + tIcon(typeKey) + '" alt="">' + TYPE_PT[typeKey] + ' <span class="car" data-clear="1" aria-label="' + ((lang === 'pt') ? 'limpar tipo' : 'clear type') + '">✕</span></button>'
-        : '<button class="fbtn" type="button" data-a="type" aria-haspopup="dialog"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M7 12h10M10 18h4"/></svg>' + ((lang === 'pt') ? 'Tipo' : 'Type') + ' <span class="car">▾</span></button>');
+      typeSel.map(function (t) { return '<button class="fbtn on t-' + t + '" type="button" data-a="rm" data-t="' + t + '" aria-label="' + (pt ? 'Remover tipo ' : 'Remove type ') + TYPE_PT[t] + '"><img src="' + tIcon(t) + '" alt="">' + TYPE_PT[t] + ' <span class="car">✕</span></button>'; }).join('') +
+      '<button class="fbtn" type="button" data-a="type" aria-haspopup="dialog"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="' + (typeSel.length ? 'M12 5v14M5 12h14' : 'M4 6h16M7 12h10M10 18h4') + '"/></svg>' + (typeSel.length ? (pt ? 'Tipo' : 'Type') : (pt ? 'Tipo' : 'Type') + ' <span class="car">▾</span>') + '</button>';
   }
   function hid(sel) { var b = $('chips').querySelector(sel); if (b) b.click(); }
   tbar.addEventListener('click', function (e) {
     var b = e.target.closest('.fbtn'); if (!b) return; var a = b.dataset.a;
     if (a === 'all') hid('[data-type=""]');
     else if (a === 'mega') hid('[data-mega]');
-    else if (a === 'type') {
-      if (typeKey && e.target.closest('[data-clear]')) { var m = megaOnly; hid('[data-type=""]'); if (m) hid('[data-mega]'); }
-      else { openTypes(); return; }
-    }
+    else if (a === 'rm') { typeSel = typeSel.filter(function (t) { return t !== b.dataset.t; }); if (typeSel.length < 2) typeAll = false; applyFilters(); }
+    else { openTypes(); return; }
     paintBar();
   });
   var tov = document.createElement('div'); tov.className = 'ov'; tov.id = 'tov'; tov.setAttribute('role', 'dialog'); tov.setAttribute('aria-modal', 'true');
   document.body.appendChild(tov);
   function openTypes() {
-    tov.setAttribute('aria-label', (lang === 'pt') ? 'Filtrar por tipo' : 'Filter by type');
-    tov.innerHTML = '<div class="panel"><div class="grab"></div><h3>' + ((lang === 'pt') ? 'Filtrar por tipo' : 'Filter by type') + '</h3><div class="tg">' + TORDER.map(function (t) {
-      return '<button type="button" class="t-' + t + (t === typeKey ? ' sel' : '') + '" data-t="' + t + '"><img src="' + tIcon(t) + '" alt="">' + TYPE_PT[t] + '</button>';
-    }).join('') + '</div></div>';
+    var pt = lang === 'pt';
+    tov.setAttribute('aria-label', pt ? 'Filtrar por tipo' : 'Filter by type');
+    tov.innerHTML = '<div class="panel"><div class="grab"></div><h3>' + (pt ? 'Filtrar por tipo' : 'Filter by type') + ' <small>' + (pt ? 'escolha um ou mais' : 'pick one or more') + '</small></h3><div class="tg">' + TORDER.map(function (t) {
+      return '<button type="button" class="t-' + t + (typeSel.indexOf(t) !== -1 ? ' sel' : '') + '" data-t="' + t + '" aria-pressed="' + (typeSel.indexOf(t) !== -1) + '"><img src="' + tIcon(t) + '" alt="">' + TYPE_PT[t] + '</button>';
+    }).join('') + '</div>' +
+      (typeSel.length > 1 ? '<div class="sg" style="margin-top:12px"><button type="button" class="fbtn plain' + (!typeAll ? ' on' : '') + '" data-m="any">' + (pt ? 'Qualquer um dos tipos' : 'Any of the types') + '</button><button type="button" class="fbtn plain' + (typeAll ? ' on' : '') + '" data-m="all">' + (pt ? 'Todos os tipos' : 'All of the types') + '</button></div>' : '') +
+      '<div class="fgo"><button type="button" class="fbtn plain on" data-go="1">' + (pt ? 'Ver ' + current.length + ' resultados' : 'Show ' + current.length + ' results') + '</button><button type="button" class="fbtn plain" data-x="1">' + (pt ? 'Limpar' : 'Clear') + '</button></div></div>';
     tov.classList.add('open');
   }
   tov.addEventListener('click', function (e) {
-    var b = e.target.closest('[data-t]');
-    if (b) { hid('[data-type="' + b.dataset.t + '"]'); tov.classList.remove('open'); paintBar(); }
-    else if (e.target === tov) tov.classList.remove('open');
+    var b = e.target.closest('[data-t]'), m = e.target.closest('[data-m]');
+    if (b) { var t = b.dataset.t, i = typeSel.indexOf(t); if (i === -1) typeSel.push(t); else typeSel.splice(i, 1); if (typeSel.length < 2) typeAll = false; applyFilters(); paintBar(); openTypes(); }
+    else if (m) { typeAll = m.dataset.m === 'all'; applyFilters(); openTypes(); }
+    else if (e.target.closest('[data-x]')) { typeSel = []; typeAll = false; applyFilters(); paintBar(); tov.classList.remove('open'); }
+    else if (e.target.closest('[data-go]') || e.target === tov) tov.classList.remove('open');
   });
 
   /* ---------- aba Itens ---------- */
-  var ITEMS = null, icat = '', itemsLoading = false;
+  var ITEMS = null, icats = [], isubs = [], itemsLoading = false;
   var ICATS = { 'Pokébolas': ['Pokébolas', 'Poké Balls'], 'Medicamentos': ['Medicamentos', 'Medicine'], 'Evolução': ['Evolução', 'Evolution'], 'Frutas': ['Frutas', 'Berries'] };
   function icatName(c) { return ICATS[c][(lang === 'pt') ? 0 : 1]; }
   function iname(x) { return (lang === 'pt') ? x.p : x.n; }
@@ -572,7 +580,6 @@
     });
   }
   function svgUrl(t) { return 'data:image/svg+xml;utf8,' + encodeURIComponent(t); }
-  var isub = '';
   var SUBS = {
     'Pokébolas': [['padrao', 'Padrão', 'Standard'], ['especial', 'Especiais', 'Special']],
     'Medicamentos': [['ps', 'Cura de PS', 'HP healing'], ['status', 'Cura de status', 'Status cure'], ['pp', 'Restaura PP', 'PP restore'], ['reviver', 'Reviver', 'Revive']],
@@ -581,37 +588,44 @@
   };
   function subName(c, g) { var r = SUBS[c].filter(function (x) { return x[0] === g; })[0]; return r ? r[lang === 'pt' ? 1 : 2] : ''; }
   function iconOf(c) { var m = { 'Pokébolas': 'poke-ball', 'Medicamentos': 'potion', 'Evolução': 'fire-stone', 'Frutas': 'oran-berry' }[c]; var x = ITEMS && ITEMS.filter(function (y) { return y.k === m; })[0]; return x ? '<img src="' + svgUrl(x.s) + '" alt="">' : ''; }
+  function iok(x) { return (!icats.length || icats.indexOf(x.c) !== -1) && (!isubs.length || isubs.indexOf(x.g) !== -1); }
   function paintItems() {
-    $('iq').placeholder = (lang === 'pt') ? 'Buscar item (ex.: poção)' : 'Search item (e.g. potion)';
-    var act = icat ? icatName(icat) + (isub ? ' · ' + subName(icat, isub) : '') : '';
-    $('icats').innerHTML = '<button class="fbtn plain' + (!icat ? ' on' : '') + '" type="button" data-a="all">' + ((lang === 'pt') ? 'Todos' : 'All') + '</button>' +
-      (icat ? '<button class="fbtn on" type="button" data-a="open" aria-label="' + esc(act) + '">' + esc(act) + ' <span class="car" data-clear="1">✕</span></button>'
-        : '<button class="fbtn" type="button" data-a="open" aria-haspopup="dialog"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M7 12h10M10 18h4"/></svg>' + ((lang === 'pt') ? 'Filtrar' : 'Filter') + ' <span class="car">▾</span></button>');
+    var pt = lang === 'pt';
+    $('iq').placeholder = pt ? 'Buscar item (ex.: poção)' : 'Search item (e.g. potion)';
+    var chips = icats.map(function (c) { return '<button class="fbtn on" type="button" data-a="rmc" data-v="' + c + '">' + icatName(c) + ' <span class="car">✕</span></button>'; }).join('') +
+      isubs.map(function (g) { var c = ''; Object.keys(SUBS).forEach(function (k) { SUBS[k].forEach(function (x) { if (x[0] === g) c = k; }); }); return '<button class="fbtn on" type="button" data-a="rms" data-v="' + g + '">' + esc(subName(c, g)) + ' <span class="car">✕</span></button>'; }).join('');
+    $('icats').innerHTML = '<button class="fbtn plain' + (!icats.length && !isubs.length ? ' on' : '') + '" type="button" data-a="all">' + (pt ? 'Todos' : 'All') + '</button>' + chips +
+      '<button class="fbtn" type="button" data-a="open" aria-haspopup="dialog"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="' + (chips ? 'M12 5v14M5 12h14' : 'M4 6h16M7 12h10M10 18h4') + '"/></svg>' + (pt ? 'Filtrar' : 'Filter') + '</button>';
     if (!ITEMS) { $('icount').textContent = ''; return; }
     var q = $('iq').value.trim().toLowerCase();
-    var l = ITEMS.filter(function (x) { return (!icat || x.c === icat) && (!isub || x.g === isub) && (!q || x.p.toLowerCase().indexOf(q) !== -1 || x.n.toLowerCase().indexOf(q) !== -1); });
-    $('icount').textContent = l.length + (lang === 'pt' ? (l.length === 1 ? ' item' : ' itens') : (l.length === 1 ? ' item' : ' items'));
+    var l = ITEMS.filter(function (x) { return iok(x) && (!q || x.p.toLowerCase().indexOf(q) !== -1 || x.n.toLowerCase().indexOf(q) !== -1); });
+    $('icount').textContent = l.length + (pt ? (l.length === 1 ? ' item' : ' itens') : (l.length === 1 ? ' item' : ' items'));
     $('igrid').innerHTML = l.length ? l.map(function (x) {
       return '<button class="card" type="button" data-i="' + x.id + '"><div class="art"><img class="ico" loading="lazy" src="' + svgUrl(x.s) + '" alt=""></div><h3>' + esc(iname(x)) + '</h3></button>';
-    }).join('') : '<div class="iempty">' + ((lang === 'pt') ? 'Nenhum item encontrado.' : 'No items found.') + '</div>';
+    }).join('') : '<div class="iempty">' + (pt ? 'Nenhum item encontrado.' : 'No items found.') + '</div>';
   }
   var fov = document.createElement('div'); fov.className = 'ov'; fov.id = 'fov'; fov.setAttribute('role', 'dialog'); fov.setAttribute('aria-modal', 'true');
   document.body.appendChild(fov);
   function openFilter() {
     var pt = lang === 'pt';
     fov.setAttribute('aria-label', pt ? 'Filtrar itens' : 'Filter items');
-    var n = ITEMS ? ITEMS.filter(function (x) { return (!icat || x.c === icat) && (!isub || x.g === isub); }).length : 0;
-    fov.innerHTML = '<div class="panel"><div class="grab"></div><h3>' + (pt ? 'Filtrar itens' : 'Filter items') + '</h3><div class="sec">' + (pt ? 'Categoria' : 'Category') + '</div><div class="cg">' +
-      Object.keys(ICATS).map(function (c) { return '<button type="button" class="' + (c === icat ? 'sel' : '') + '" data-fc="' + c + '">' + iconOf(c) + icatName(c) + '</button>'; }).join('') + '</div>' +
-      (icat ? '<div class="sec">' + (pt ? 'Tipo de item' : 'Item kind') + '</div><div class="sg">' + SUBS[icat].map(function (x) { return '<button type="button" class="fbtn plain' + (x[0] === isub ? ' on' : '') + '" data-fs="' + x[0] + '">' + x[lang === 'pt' ? 1 : 2] + '</button>'; }).join('') + '</div>' : '') +
+    var n = ITEMS ? ITEMS.filter(iok).length : 0;
+    var subs = Object.keys(ICATS).filter(function (c) { return icats.indexOf(c) !== -1; });
+    fov.innerHTML = '<div class="panel"><div class="grab"></div><h3>' + (pt ? 'Filtrar itens' : 'Filter items') + ' <small>' + (pt ? 'escolha um ou mais' : 'pick one or more') + '</small></h3><div class="sec">' + (pt ? 'Categoria' : 'Category') + '</div><div class="cg">' +
+      Object.keys(ICATS).map(function (c) { return '<button type="button" class="' + (icats.indexOf(c) !== -1 ? 'sel' : '') + '" data-fc="' + c + '" aria-pressed="' + (icats.indexOf(c) !== -1) + '">' + iconOf(c) + icatName(c) + '</button>'; }).join('') + '</div>' +
+      subs.map(function (c) { return '<div class="sec">' + icatName(c) + ' · ' + (pt ? 'tipo de item' : 'item kind') + '</div><div class="sg">' + SUBS[c].map(function (x) { return '<button type="button" class="fbtn plain' + (isubs.indexOf(x[0]) !== -1 ? ' on' : '') + '" data-fs="' + x[0] + '">' + x[lang === 'pt' ? 1 : 2] + '</button>'; }).join('') + '</div>'; }).join('') +
       '<div class="fgo"><button type="button" class="fbtn plain on" data-fgo="1">' + (pt ? 'Ver ' + n + ' itens' : 'Show ' + n + ' items') + '</button><button type="button" class="fbtn plain" data-fx="1">' + (pt ? 'Limpar' : 'Clear') + '</button></div></div>';
     fov.classList.add('open');
   }
+  function toggle(arr, v) { var i = arr.indexOf(v); if (i === -1) arr.push(v); else arr.splice(i, 1); }
   fov.addEventListener('click', function (e) {
     var c = e.target.closest('[data-fc]'), g = e.target.closest('[data-fs]');
-    if (c) { icat = (icat === c.dataset.fc) ? '' : c.dataset.fc; isub = ''; openFilter(); paintItems(); }
-    else if (g) { isub = (isub === g.dataset.fs) ? '' : g.dataset.fs; openFilter(); paintItems(); }
-    else if (e.target.closest('[data-fx]')) { icat = ''; isub = ''; fov.classList.remove('open'); paintItems(); }
+    if (c) {
+      var k = c.dataset.fc; toggle(icats, k);
+      if (icats.indexOf(k) === -1) isubs = isubs.filter(function (x) { return !SUBS[k].some(function (y) { return y[0] === x; }); });
+      openFilter(); paintItems();
+    } else if (g) { toggle(isubs, g.dataset.fs); openFilter(); paintItems(); }
+    else if (e.target.closest('[data-fx]')) { icats = []; isubs = []; fov.classList.remove('open'); paintItems(); }
     else if (e.target.closest('[data-fgo]') || e.target === fov) fov.classList.remove('open');
   });
   var iov = document.createElement('div'); iov.className = 'ov'; iov.id = 'iov'; iov.setAttribute('role', 'dialog'); iov.setAttribute('aria-modal', 'true');
@@ -625,10 +639,12 @@
   }
   iov.addEventListener('click', function (e) { if (e.target === iov) { iov.classList.remove('open'); openItemId = null; } });
   $('icats').addEventListener('click', function (e) {
-    var b = e.target.closest('.fbtn'); if (!b) return;
-    if (b.dataset.a === 'all') { icat = ''; isub = ''; paintItems(); }
-    else if (e.target.closest('[data-clear]')) { icat = ''; isub = ''; paintItems(); }
-    else openFilter();
+    var b = e.target.closest('.fbtn'); if (!b) return; var a = b.dataset.a;
+    if (a === 'all') { icats = []; isubs = []; }
+    else if (a === 'rmc') { var k = b.dataset.v; icats = icats.filter(function (x) { return x !== k; }); isubs = isubs.filter(function (x) { return !SUBS[k].some(function (y) { return y[0] === x; }); }); }
+    else if (a === 'rms') isubs = isubs.filter(function (x) { return x !== b.dataset.v; });
+    else { openFilter(); return; }
+    paintItems();
   });
   $('iq').addEventListener('input', paintItems);
   $('igrid').addEventListener('click', function (e) { var i = e.target.closest('[data-i]'); if (i) openItem(+i.dataset.i); });
