@@ -21,7 +21,7 @@ Pokédex com os dados da [PokéAPI](https://pokeapi.co/): busca por nome ou núm
 - As imagens vêm do repositório PokeAPI/sprites (arte Dream World, ~90 px). Os efeitos vêm da PokéAPI e podem variar entre gerações; nomes e textos em português **não são oficiais**. O botão PT/EN também vale para os itens.
 
 ## Insígnias
-- A aba **Insígnias** reúne 68 insígnias de ginásio (Kanto, Johto, Hoenn, Sinnoh, Unova, Kalos, Galar e Paldea), com busca por insígnia, líder, cidade ou tipo e botão **Filtrar** (várias regiões, vários tipos de ginásio e situação: conquistadas ou faltam).
+- A aba **Insígnias** reúne 77 insígnias: as de ginásio dos jogos principais (Kanto, Johto, Hoenn, Sinnoh, Unova, Kalos, Galar e Paldea), as 4 das Ilhas Laranja (anime) e as 5 de Pasio (Pokémon Masters EX), com busca por insígnia, líder, cidade ou tipo e botão **Filtrar** (várias regiões, vários tipos de ginásio e situação: conquistadas ou faltam).
 - Cada ficha mostra líder, cidade, tipo e jogos. Dá para **marcar como conquistada**; o progresso fica salvo no próprio aparelho.
 - Imagens do repositório PokeAPI/sprites. Os dados foram preenchidos a partir dos jogos principais e podem ter erros; o termo "Insígnia" é uma tradução não oficial.
 

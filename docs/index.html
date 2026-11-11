@@ -691,7 +691,8 @@
   /* ---------- aba Insígnias ---------- */
   var BADGES = null, bloading = false, bregs = [], bonlyOwn = false, bopenId = null, bown = {};
   try { bown = JSON.parse(localStorage.getItem('pk-badges') || '{}') || {}; } catch (e) { bown = {}; }
-  var REGS = ['Kanto', 'Johto', 'Hoenn', 'Sinnoh', 'Unova', 'Kalos', 'Galar', 'Paldea'];
+  var REGS = ['Kanto', 'Johto', 'Hoenn', 'Sinnoh', 'Unova', 'Kalos', 'Galar', 'Paldea', 'Ilhas Laranja', 'Pasio'];
+  function rname(r) { return (lang !== 'pt' && r === 'Ilhas Laranja') ? 'Orange Islands' : r; }
   function bname(x) { return (lang === 'pt' ? 'Insígnia ' : '') + x.n + (lang === 'pt' ? '' : ' Badge'); }
   function ownCount() { return Object.keys(bown).filter(function (k) { return bown[k]; }).length; }
   function loadBadges() {
@@ -714,7 +715,7 @@
     $('bq').placeholder = pt ? 'Buscar insígnia, líder ou cidade' : 'Search badge, leader or city';
     var any = bregs.length || btypes.length || bstat;
     $('bregs').innerHTML = '<button class="fbtn plain' + (!any ? ' on' : '') + '" type="button" data-a="all">' + (pt ? 'Todas' : 'All') + '</button>' +
-      bregs.map(function (r) { return '<button class="fbtn on" type="button" data-a="rr" data-v="' + r + '">' + r + ' <span class="car">✕</span></button>'; }).join('') +
+      bregs.map(function (r) { return '<button class="fbtn on" type="button" data-a="rr" data-v="' + r + '">' + rname(r) + ' <span class="car">✕</span></button>'; }).join('') +
       btypes.map(function (t) { return '<button class="fbtn on t-' + t + '" type="button" data-a="rt" data-v="' + t + '"><img src="' + tIcon(t) + '" alt="">' + TYPE_PT[t] + ' <span class="car">✕</span></button>'; }).join('') +
       (bstat ? '<button class="fbtn on" type="button" data-a="rs">' + (bstat === 'own' ? (pt ? 'Conquistadas' : 'Collected') : (pt ? 'Faltam' : 'Missing')) + ' <span class="car">✕</span></button>' : '') +
       '<button class="fbtn" type="button" data-a="open" aria-haspopup="dialog"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="' + (any ? 'M12 5v14M5 12h14' : 'M4 6h16M7 12h10M10 18h4') + '"/></svg>' + (pt ? 'Filtrar' : 'Filter') + '</button>';
@@ -723,11 +724,11 @@
     if (!BADGES) { $('bcount').textContent = ''; return; }
     var q = $('bq').value.trim().toLowerCase();
     var l = BADGES.filter(function (x) {
-      return bok(x) && (!q || (x.n + ' ' + x.l + ' ' + x.c + ' ' + x.r + ' ' + TYPE_PT[x.t]).toLowerCase().indexOf(q) !== -1 || x.t.indexOf(q) !== -1);
+      return bok(x) && (!q || (x.n + ' ' + x.l + ' ' + x.c + ' ' + x.r + ' ' + rname(x.r) + ' ' + (TYPE_PT[x.t] || '')).toLowerCase().indexOf(q) !== -1 || (x.t && x.t.indexOf(q) !== -1));
     });
     $('bcount').textContent = l.length + (pt ? (l.length === 1 ? ' insígnia' : ' insígnias') : (l.length === 1 ? ' badge' : ' badges'));
     $('bgrid').innerHTML = l.length ? l.map(function (x) {
-      return '<button class="card bcard' + (bown[x.id] ? ' own' : '') + (n ? ' anyown' : '') + '" type="button" data-b="' + x.id + '"><div class="art"><img class="ico" loading="lazy" src="data:image/png;base64,' + x.i + '" alt=""></div>' + (bown[x.id] ? '<span class="chk" aria-label="' + (pt ? 'conquistada' : 'collected') + '">✓</span>' : '') + '<h3>' + esc(bname(x)) + '</h3><small>' + x.r + '</small></button>';
+      return '<button class="card bcard' + (bown[x.id] ? ' own' : '') + (n ? ' anyown' : '') + '" type="button" data-b="' + x.id + '"><div class="art"><img class="ico" loading="lazy" src="data:image/png;base64,' + x.i + '" alt=""></div>' + (bown[x.id] ? '<span class="chk" aria-label="' + (pt ? 'conquistada' : 'collected') + '">✓</span>' : '') + '<h3>' + esc(bname(x)) + '</h3><small>' + rname(x.r) + '</small></button>';
     }).join('') : '<div class="iempty">' + (pt ? 'Nenhuma insígnia encontrada.' : 'No badges found.') + '</div>';
   }
   var bfov = document.createElement('div'); bfov.className = 'ov'; bfov.id = 'bfov'; bfov.setAttribute('role', 'dialog'); bfov.setAttribute('aria-modal', 'true');
@@ -737,7 +738,7 @@
     bfov.setAttribute('aria-label', pt ? 'Filtrar insígnias' : 'Filter badges');
     var n = BADGES ? BADGES.filter(bok).length : 0;
     bfov.innerHTML = '<div class="panel"><div class="grab"></div><h3>' + (pt ? 'Filtrar insígnias' : 'Filter badges') + ' <small>' + (pt ? 'escolha um ou mais' : 'pick one or more') + '</small></h3>' +
-      '<div class="sec">' + (pt ? 'Região' : 'Region') + '</div><div class="sg">' + REGS.map(function (r) { return '<button type="button" class="fbtn plain' + (bregs.indexOf(r) !== -1 ? ' on' : '') + '" data-fr="' + r + '" aria-pressed="' + (bregs.indexOf(r) !== -1) + '">' + r + '</button>'; }).join('') + '</div>' +
+      '<div class="sec">' + (pt ? 'Região' : 'Region') + '</div><div class="sg">' + REGS.map(function (r) { return '<button type="button" class="fbtn plain' + (bregs.indexOf(r) !== -1 ? ' on' : '') + '" data-fr="' + r + '" aria-pressed="' + (bregs.indexOf(r) !== -1) + '">' + rname(r) + '</button>'; }).join('') + '</div>' +
       '<div class="sec">' + (pt ? 'Tipo do ginásio' : 'Gym type') + '</div><div class="tg" style="margin-bottom:14px">' + TORDER.map(function (t) { return '<button type="button" class="t-' + t + (btypes.indexOf(t) !== -1 ? ' sel' : '') + '" data-ft="' + t + '" aria-pressed="' + (btypes.indexOf(t) !== -1) + '"><img src="' + tIcon(t) + '" alt="">' + TYPE_PT[t] + '</button>'; }).join('') + '</div>' +
       '<div class="sec">' + (pt ? 'Situação' : 'Status') + '</div><div class="sg"><button type="button" class="fbtn plain' + (bstat === 'own' ? ' on' : '') + '" data-fst="own">✓ ' + (pt ? 'Conquistadas' : 'Collected') + '</button><button type="button" class="fbtn plain' + (bstat === 'miss' ? ' on' : '') + '" data-fst="miss">' + (pt ? 'Faltam' : 'Missing') + '</button></div>' +
       '<div class="fgo"><button type="button" class="fbtn plain on" data-fgo="1">' + (pt ? 'Ver ' + n + ' insígnias' : 'Show ' + n + ' badges') + '</button><button type="button" class="fbtn plain" data-fx="1">' + (pt ? 'Limpar' : 'Clear') + '</button></div></div>';
@@ -756,11 +757,11 @@
   function openBadge(id) {
     var x = BADGES.filter(function (y) { return y.id === id; })[0]; if (!x) return;
     var pt = lang === 'pt'; bopenId = id; bov.setAttribute('aria-label', bname(x));
-    bov.innerHTML = '<div class="panel"><div class="grab"></div><div class="ihead"><img class="ibig" src="data:image/png;base64,' + x.i + '" alt=""><h2>' + esc(bname(x)) + '</h2><span class="fbtn plain">' + x.r + '</span></div>' +
+    bov.innerHTML = '<div class="panel"><div class="grab"></div><div class="ihead"><img class="ibig" src="data:image/png;base64,' + x.i + '" alt=""><h2>' + esc(bname(x)) + '</h2><span class="fbtn plain">' + rname(x.r) + '</span></div>' +
       '<div class="bfacts"><div><span class="l">' + (pt ? 'Líder de ginásio' : 'Gym leader') + '</span><b>' + esc(x.l) + '</b></div><div><span class="l">' + (pt ? 'Cidade' : 'City') + '</span><b>' + esc(x.c) + '</b></div>' +
-      '<div><span class="l">' + (pt ? 'Especialidade' : 'Specialty') + '</span><br><span class="fbtn on t-' + x.t + '"><img src="' + tIcon(x.t) + '" alt="">' + TYPE_PT[x.t] + '</span></div><div><span class="l">' + (pt ? 'Jogos' : 'Games') + '</span><b>' + esc(x.g) + '</b></div></div>' +
+      '<div><span class="l">' + (pt ? 'Especialidade' : 'Specialty') + '</span>' + (x.t ? '<br><span class="fbtn on t-' + x.t + '"><img src="' + tIcon(x.t) + '" alt="">' + TYPE_PT[x.t] + '</span>' : '<b>' + (pt ? 'Sem tipo fixo' : 'No set type') + '</b>') + '</div><div><span class="l">' + (pt ? 'Origem' : 'Source') + '</span><b>' + esc(x.g) + '</b></div></div>' +
       '<button type="button" class="fbtn plain bown' + (bown[x.id] ? ' on' : '') + '" data-own="' + x.id + '" aria-pressed="' + !!bown[x.id] + '">' + (bown[x.id] ? '✓ ' + (pt ? 'Conquistada' : 'Collected') : (pt ? 'Marcar como conquistada' : 'Mark as collected')) + '</button>' +
-      '<p class="inote">' + (pt ? 'Nomes e dados conforme os jogos principais; “Insígnia” é a tradução usada aqui, não oficial.' : 'Names and data from the main series games.') + '</p></div>';
+      '<p class="inote">' + (pt ? 'Nomes e dados conforme os jogos e o anime; “Insígnia” é a tradução usada aqui, não oficial.' : 'Names and data from the games and the anime.') + '</p></div>';
     bov.classList.add('open');
   }
   bov.addEventListener('click', function (e) {
