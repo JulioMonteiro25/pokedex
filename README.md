@@ -1,5 +1,7 @@
 # Pokédex
 
+**🔗 Acesse o app: https://juliomonteiro25.github.io/pokedex/**
+
 Pokédex com os dados da [PokéAPI](https://pokeapi.co/): busca por nome ou número, filtro por tipo, status, habilidades, fraquezas e vantagens por tipo, árvore de evoluções com imagens e as 97 Mega Evoluções. Funciona como app no iPhone (tela cheia, ícone de pokébola e uso offline depois do primeiro acesso).
 
 ## Idioma (português / inglês)
@@ -21,7 +23,7 @@ Na ficha de cada Pokémon:
 O cálculo usa a tabela de tipos embutida no `docs/index.html`, por isso funciona offline e vale para todos os Pokémon.
 
 ## Instalar no iPhone
-1. Abra o endereço do GitHub Pages deste repositório no **Safari**.
+1. Abra https://juliomonteiro25.github.io/pokedex/ no **Safari**.
 2. Toque em Compartilhar e depois em **Adicionar à Tela de Início**.
 3. Abra pelo ícone da pokébola.
 
