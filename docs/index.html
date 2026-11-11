@@ -195,6 +195,19 @@
   .fgo { display: flex; gap: 8px; margin-top: 8px; }
   .fgo .fbtn { flex: 1; justify-content: center; }
   .fgo .fbtn:first-child { flex: 2; }
+  #bregs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  #bregs .fbtn { flex: none; }
+  .bcard { position: relative; }
+  .bcard small { display: block; color: var(--muted); font-size: .78rem; margin-top: 2px; }
+  .bcard .chk { position: absolute; top: 8px; right: 8px; width: 24px; height: 24px; border-radius: 50%; background: #2e9b4f; color: #fff; display: grid; place-items: center; font-size: .8rem; font-weight: 700; box-shadow: 0 2px 6px rgba(0,0,0,.25); }
+  .bcard.own .art .ico { filter: drop-shadow(0 4px 5px rgba(0,0,0,.25)); }
+  .bcard:not(.own).anyown .art .ico { opacity: .55; filter: grayscale(.6); }
+  .bfacts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 16px 0 4px; }
+  .bfacts div { background: var(--surface-2); border-radius: 14px; padding: 10px 12px; min-width: 0; }
+  .bfacts b { display: block; font-size: .95rem; overflow-wrap: anywhere; } .bfacts span.l { color: var(--muted); font-size: .78rem; }
+  .bfacts .fbtn { display: inline-flex; padding: 2px 10px 2px 4px; font-size: .85rem; margin-top: 2px; }
+  .bfacts .fbtn img { width: 20px; height: 20px; border-radius: 6px; }
+  .bown { width: 100%; justify-content: center; margin-top: 12px; padding: 10px 14px; }
   .iempty { grid-column: 1 / -1; text-align: center; color: var(--muted); padding: 30px 0; }
 </style></head><body><header class="top">
   <div class="bar">
@@ -231,6 +244,15 @@
   </div>
   <div class="meta"><span id="icount"></span><span>Dados: PokéAPI</span></div>
   <div class="grid" id="igrid"></div>
+</div>
+
+<div class="wrap" id="badgesWrap" hidden>
+  <div class="search-card">
+    <div class="search-row"><input id="bq" type="search" placeholder="Buscar insígnia, líder ou cidade" autocomplete="off" aria-label="Buscar insígnia"></div>
+    <div class="filterbar" id="bregs" aria-label="Regiões"></div>
+  </div>
+  <div class="meta"><span id="bcount"></span><span id="bown"></span></div>
+  <div class="grid" id="bgrid"></div>
 </div>
 
 <div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-label="Detalhes do Pokémon">
@@ -647,28 +669,90 @@
   });
   $('iq').addEventListener('input', paintItems);
   $('igrid').addEventListener('click', function (e) { var i = e.target.closest('[data-i]'); if (i) openItem(+i.dataset.i); });
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { tov.classList.remove('open'); fov.classList.remove('open'); iov.classList.remove('open'); openItemId = null; } });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { tov.classList.remove('open'); fov.classList.remove('open'); iov.classList.remove('open'); bov.classList.remove('open'); openItemId = null; bopenId = null; } });
   window.__repaintLang = function () {
-    paintBar(); paintItems(); tabLabels();
+    paintBar(); paintItems(); paintBadges(); tabLabels();
+    if (bov.classList.contains('open') && BADGES) openBadge(bopenId);
     if (tov.classList.contains('open')) openTypes();
     if (fov.classList.contains('open')) openFilter();
     if (iov.classList.contains('open') && ITEMS) openItem(openItemId);
   };
 
+
+  /* ---------- aba Insígnias ---------- */
+  var BADGES = null, bloading = false, bregs = [], bonlyOwn = false, bopenId = null, bown = {};
+  try { bown = JSON.parse(localStorage.getItem('pk-badges') || '{}') || {}; } catch (e) { bown = {}; }
+  var REGS = ['Kanto', 'Johto', 'Hoenn', 'Sinnoh', 'Unova', 'Kalos', 'Galar', 'Paldea'];
+  function bname(x) { return (lang === 'pt' ? 'Insígnia ' : '') + x.n + (lang === 'pt' ? '' : ' Badge'); }
+  function ownCount() { return Object.keys(bown).filter(function (k) { return bown[k]; }).length; }
+  function loadBadges() {
+    if (BADGES || bloading) return; bloading = true;
+    fetch('insignias.json').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (d) { BADGES = d; bloading = false; paintBadges(); }).catch(function () {
+      bloading = false; $('bgrid').innerHTML = '<div class="iempty">' + (lang === 'pt' ? 'Não foi possível carregar as insígnias.' : 'Could not load badges.') + ' <button type="button" id="bretry">' + (lang === 'pt' ? 'Tentar de novo' : 'Retry') + '</button></div>';
+      $('bretry').onclick = loadBadges;
+    });
+  }
+  function paintBadges() {
+    var pt = lang === 'pt';
+    $('bq').placeholder = pt ? 'Buscar insígnia, líder ou cidade' : 'Search badge, leader or city';
+    $('bregs').innerHTML = '<button class="fbtn plain' + (!bregs.length && !bonlyOwn ? ' on' : '') + '" type="button" data-a="all">' + (pt ? 'Todas' : 'All') + '</button>' +
+      '<button class="fbtn plain' + (bonlyOwn ? ' on' : '') + '" type="button" data-a="own" aria-pressed="' + bonlyOwn + '">✓ ' + (pt ? 'Conquistadas' : 'Collected') + '</button>' +
+      REGS.map(function (r) { return '<button class="fbtn plain' + (bregs.indexOf(r) !== -1 ? ' on' : '') + '" type="button" data-r="' + r + '" aria-pressed="' + (bregs.indexOf(r) !== -1) + '">' + r + '</button>'; }).join('');
+    var n = ownCount();
+    $('bown').textContent = BADGES ? (n + '/' + BADGES.length + (pt ? ' conquistadas' : ' collected')) : '';
+    if (!BADGES) { $('bcount').textContent = ''; return; }
+    var q = $('bq').value.trim().toLowerCase();
+    var l = BADGES.filter(function (x) {
+      if (bregs.length && bregs.indexOf(x.r) === -1) return false;
+      if (bonlyOwn && !bown[x.id]) return false;
+      return !q || (x.n + ' ' + x.l + ' ' + x.c + ' ' + x.r + ' ' + TYPE_PT[x.t]).toLowerCase().indexOf(q) !== -1 || x.t.indexOf(q) !== -1;
+    });
+    $('bcount').textContent = l.length + (pt ? (l.length === 1 ? ' insígnia' : ' insígnias') : (l.length === 1 ? ' badge' : ' badges'));
+    $('bgrid').innerHTML = l.length ? l.map(function (x) {
+      return '<button class="card bcard' + (bown[x.id] ? ' own' : '') + (n ? ' anyown' : '') + '" type="button" data-b="' + x.id + '"><div class="art"><img class="ico" loading="lazy" src="data:image/png;base64,' + x.i + '" alt=""></div>' + (bown[x.id] ? '<span class="chk" aria-label="' + (pt ? 'conquistada' : 'collected') + '">✓</span>' : '') + '<h3>' + esc(bname(x)) + '</h3><small>' + x.r + '</small></button>';
+    }).join('') : '<div class="iempty">' + (pt ? 'Nenhuma insígnia encontrada.' : 'No badges found.') + '</div>';
+  }
+  var bov = document.createElement('div'); bov.className = 'ov'; bov.id = 'bov'; bov.setAttribute('role', 'dialog'); bov.setAttribute('aria-modal', 'true');
+  document.body.appendChild(bov);
+  function openBadge(id) {
+    var x = BADGES.filter(function (y) { return y.id === id; })[0]; if (!x) return;
+    var pt = lang === 'pt'; bopenId = id; bov.setAttribute('aria-label', bname(x));
+    bov.innerHTML = '<div class="panel"><div class="grab"></div><div class="ihead"><img class="ibig" src="data:image/png;base64,' + x.i + '" alt=""><h2>' + esc(bname(x)) + '</h2><span class="fbtn plain">' + x.r + '</span></div>' +
+      '<div class="bfacts"><div><span class="l">' + (pt ? 'Líder de ginásio' : 'Gym leader') + '</span><b>' + esc(x.l) + '</b></div><div><span class="l">' + (pt ? 'Cidade' : 'City') + '</span><b>' + esc(x.c) + '</b></div>' +
+      '<div><span class="l">' + (pt ? 'Especialidade' : 'Specialty') + '</span><br><span class="fbtn on t-' + x.t + '"><img src="' + tIcon(x.t) + '" alt="">' + TYPE_PT[x.t] + '</span></div><div><span class="l">' + (pt ? 'Jogos' : 'Games') + '</span><b>' + esc(x.g) + '</b></div></div>' +
+      '<button type="button" class="fbtn plain bown' + (bown[x.id] ? ' on' : '') + '" data-own="' + x.id + '" aria-pressed="' + !!bown[x.id] + '">' + (bown[x.id] ? '✓ ' + (pt ? 'Conquistada' : 'Collected') : (pt ? 'Marcar como conquistada' : 'Mark as collected')) + '</button>' +
+      '<p class="inote">' + (pt ? 'Nomes e dados conforme os jogos principais; “Insígnia” é a tradução usada aqui, não oficial.' : 'Names and data from the main series games.') + '</p></div>';
+    bov.classList.add('open');
+  }
+  bov.addEventListener('click', function (e) {
+    var o = e.target.closest('[data-own]');
+    if (o) { var k = o.dataset.own; if (bown[k]) delete bown[k]; else bown[k] = 1; try { localStorage.setItem('pk-badges', JSON.stringify(bown)); } catch (er) {} openBadge(+k); paintBadges(); }
+    else if (e.target === bov) { bov.classList.remove('open'); bopenId = null; }
+  });
+  $('bregs').addEventListener('click', function (e) {
+    var b = e.target.closest('.fbtn'); if (!b) return;
+    if (b.dataset.a === 'all') { bregs = []; bonlyOwn = false; }
+    else if (b.dataset.a === 'own') bonlyOwn = !bonlyOwn;
+    else { var r = b.dataset.r, i = bregs.indexOf(r); if (i === -1) bregs.push(r); else bregs.splice(i, 1); }
+    paintBadges();
+  });
+  $('bq').addEventListener('input', paintBadges);
+  $('bgrid').addEventListener('click', function (e) { var c = e.target.closest('[data-b]'); if (c) openBadge(+c.dataset.b); });
+
   /* barra de abas */
   var tb = document.createElement('nav'); tb.className = 'tabbar'; tb.id = 'tabbar'; tb.setAttribute('aria-label', 'Seções');
-  tb.innerHTML = '<button type="button" class="on" data-v="p"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h6M15 12h6"/><circle cx="12" cy="12" r="2.5"/></svg><span>Pokémon</span></button><button type="button" data-v="i"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v4l-5 11a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-11V3"/><path d="M7.5 14h9"/></svg><span id="tabI">Itens</span></button>';
+  tb.innerHTML = '<button type="button" class="on" data-v="p"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h6M15 12h6"/><circle cx="12" cy="12" r="2.5"/></svg><span>Pokémon</span></button><button type="button" data-v="i"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v4l-5 11a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-11V3"/><path d="M7.5 14h9"/></svg><span id="tabI">Itens</span></button><button type="button" data-v="b"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.3 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z"/></svg><span id="tabB">Insígnias</span></button>';
   document.body.appendChild(tb);
-  function tabLabels() { $('tabI').textContent = (lang === 'pt') ? 'Itens' : 'Items'; }
+  function tabLabels() { $('tabI').textContent = (lang === 'pt') ? 'Itens' : 'Items'; $('tabB').textContent = (lang === 'pt') ? 'Insígnias' : 'Badges'; }
   function showTab(v) {
-    var it = v === 'i';
     tb.querySelectorAll('button').forEach(function (x) { x.classList.toggle('on', x.dataset.v === v); x.setAttribute('aria-current', x.dataset.v === v ? 'page' : 'false'); });
-    $('mainWrap').hidden = it; $('itemsWrap').hidden = !it;
-    if (it) { loadItems(); paintItems(); }
+    $('mainWrap').hidden = v !== 'p'; $('itemsWrap').hidden = v !== 'i'; $('badgesWrap').hidden = v !== 'b';
+    if (v === 'i') { loadItems(); paintItems(); }
+    if (v === 'b') { loadBadges(); paintBadges(); }
     window.scrollTo(0, 0);
   }
   tb.addEventListener('click', function (e) { var b = e.target.closest('button'); if (b) showTab(b.dataset.v); });
-  paintBar(); paintItems(); tabLabels();
+  paintBar(); paintItems(); paintBadges(); tabLabels();
 
   init();
 })();

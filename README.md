@@ -17,6 +17,11 @@ Pokédex com os dados da [PokéAPI](https://pokeapi.co/): busca por nome ou núm
 - O botão **Filtrar** abre um painel onde dá para marcar **várias categorias e tipos de item** ao mesmo tempo (ex.: Medicamentos › Reviver, Frutas › Resistência a tipo).
 - As imagens vêm do repositório PokeAPI/sprites (arte Dream World, ~90 px). Os efeitos vêm da PokéAPI e podem variar entre gerações; nomes e textos em português **não são oficiais**. O botão PT/EN também vale para os itens.
 
+## Insígnias
+- A aba **Insígnias** reúne 68 insígnias de ginásio (Kanto, Johto, Hoenn, Sinnoh, Unova, Kalos, Galar e Paldea), com busca por insígnia, líder, cidade ou tipo e filtro por região (dá para marcar várias).
+- Cada ficha mostra líder, cidade, tipo e jogos. Dá para **marcar como conquistada**; o progresso fica salvo no próprio aparelho.
+- Imagens do repositório PokeAPI/sprites. Os dados foram preenchidos a partir dos jogos principais e podem ter erros; o termo "Insígnia" é uma tradução não oficial.
+
 ## Mega Evoluções
 - O filtro **Mega** (ao lado de "Todos") mostra só as Megas e combina com o filtro de tipo.
 - A busca por nome também encontra as Megas (ex.: "charizard" mostra Charizard, Mega Charizard X e Mega Charizard Y).
@@ -42,6 +47,7 @@ docs/            o app (é a pasta publicada pelo GitHub Pages)
 ferramentas/     scripts PowerShell e a versão antiga para PC
 ```
 - `docs/index.html`, `manifest.webmanifest`, `sw.js`, ícones: o app.
+- `docs/insignias.json`: insígnias (dados e imagem em base64), carregado ao abrir a aba Insígnias.
 - `docs/itens.json`: itens (nomes e efeitos em PT/EN, imagem em base64), carregado ao abrir a aba Itens.
 - `docs/pt.json`: traduções para português (descrições `f`, categorias `g`, habilidades `a` e condições de evolução `e`).
 - `docs/data.json`: dados dos 1025 Pokémon (tipos, status, habilidades, evoluções) e, na chave `m`, das 97 Megas.
